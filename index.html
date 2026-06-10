@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>青岛公司发现 - 高德地图</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Microsoft YaHei",sans-serif;overflow:hidden;background:#fff}
+#map{width:100vw;height:100vh}
+
+/* ===== 顶栏 ===== */
+#bar{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:200;
+  display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center;
+  background:rgba(255,255,255,.97);padding:8px 12px;
+  border-radius:10px;box-shadow:0 2px 16px rgba(0,0,0,.12)}
+#bar button{padding:8px 12px;border:none;border-radius:6px;font-size:12px;
+  cursor:pointer;font-weight:bold;white-space:nowrap;transition:.15s}
+#bar button:hover{opacity:.85;transform:translateY(-1px)}
+.btn-mode{background:#fff;color:#333;border:1px solid #d9d9d9!important}
+.btn-mode.on{background:#1677ff;color:#fff;border-color:#1677ff!important}
+.btn-dist{background:#fff;color:#333;border:1px solid #d9d9d9!important;position:relative}
+.btn-dist.on{background:#722ed1;color:#fff;border-color:#722ed1!important}
+.btn-go{background:#1677ff;color:#fff;font-size:15px!important;padding:10px 22px!important}
+.btn-go.busy{background:#faad14;pointer-events:none}
+.btn-csv{background:#52c41a;color:#fff}
+.btn-csv:disabled{background:#e8e8e8;color:#bbb;cursor:not-allowed}
+.btn-cancel{background:#ff4d4f;color:#fff;font-size:13px!important;display:none}
+.btn-home{background:#fff;color:#333;border:1px solid #d9d9d9!important;font-size:11px!important}
+.btn-r{background:#f5f5f5;color:#333;border:1px solid #e0e0e0!important;font-size:11px!important;padding:6px 8px!important}
+.btn-r.on{background:#1677ff;color:#fff;border-color:#1677ff!important}
+.btn-sort{background:#f5f5f5;color:#333;border:1px solid #e0e0e0!important;font-size:11px!important}
+.btn-sort.on{background:#fa8c16;color:#fff;border-color:#fa8c16!important}
+.sep{color:#ddd;margin:0 2px;font-size:14px;user-select:none}
+
+/* ===== 区选择下拉 ===== */
+#distDrop{display:none;position:absolute;top:100%;left:0;margin-top:4px;
+  background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:8px 0;
+  box-shadow:0 4px 20px rgba(0,0,0,.12);min-width:160px;z-index:300}
+#distDrop label{display:block;padding:6px 16px;cursor:pointer;font-size:12px;white-space:nowrap}
+#distDrop label:hover{background:#f0f5ff}
+#distDrop input{margin-right:6px}
+#distDrop .act{display:flex;gap:4px;padding:4px 16px;border-top:1px solid #f0f0f0;margin-top:4px;padding-top:8px}
+#distDrop .act button{font-size:11px!important;padding:3px 8px!important;background:#f5f5f5;border:1px solid #d9d9d9;border-radius:4px;cursor:pointer}
+
+/* ===== 提示 ===== */
+#tip{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);z-index:200;
+  background:rgba(0,0,0,.78);color:#fff;padding:8px 20px;
+  border-radius:20px;font-size:13px;pointer-events:none;text-align:center;max-width:85vw}
+#drawHint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:199;
+  background:rgba(22,119,255,.9);color:#fff;padding:16px 32px;
+  border-radius:10px;font-size:16px;font-weight:bold;display:none;pointer-events:none}
+
+/* ===== 结果面板 ===== */
+#res{position:absolute;top:70px;right:10px;z-index:200;width:450px;
+  max-height:calc(100vh - 100px);background:rgba(255,255,255,.97);
+  border:1px solid #e0e0e0;border-radius:10px;display:none;flex-direction:column;
+  box-shadow:0 4px 24px rgba(0,0,0,.12);font-size:13px;color:#333}
+#res .rh{padding:10px 14px;border-bottom:1px solid #f0f0f0;
+  display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:8px}
+#res .rh strong{color:#1677ff;font-size:14px}
+#res .rh .ctl{display:flex;gap:4px}
+#res .rh .ctl button{background:#e8e8e8;border:none;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:11px}
+#res .rh .ctl button.on{background:#1677ff;color:#fff}
+#res .rb{overflow-y:auto;flex:1;padding:8px}
+#res.mini{width:200px}#res.mini .rb,#res.mini .sortrow{display:none}
+
+/* ===== 排序栏 ===== */
+.sortrow{padding:6px 8px;border-bottom:1px solid #f0f0f0;display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap}
+.sortrow button{font-size:10px!important;padding:3px 8px!important;border-radius:4px;border:1px solid #e0e0e0;background:#fafafa;cursor:pointer}
+.sortrow button.on{background:#fa8c16;color:#fff;border-color:#fa8c16}
+
+/* ===== 进度条 ===== */
+.prog{background:#f0f0f0;border-radius:4px;height:4px;margin:6px 0}
+.prog div{background:#1677ff;height:100%;border-radius:4px;width:0;transition:width .2s}
+.pt{font-size:11px;color:#999;margin:3px 0}
+
+/* ===== 列表项 ===== */
+.rrow{background:#fafafa;border:1px solid #f0f0f0;border-left:3px solid transparent;
+  border-radius:6px;padding:8px 10px;margin-bottom:4px;cursor:pointer;transition:.15s}
+.rrow:hover{background:#f0f5ff}
+.rrow.h{border-left-color:#52c41a}.rrow.m{border-left-color:#faad14}.rrow.l{border-left-color:#ff4d4f}
+.rt{display:flex;justify-content:space-between;align-items:center}
+.rn{font-weight:bold;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rs{font-size:15px;font-weight:bold}.rs.h{color:#52c41a}.rs.m{color:#faad14}.rs.l{color:#ff4d4f}
+.rnatur{display:inline-block;padding:1px 5px;border-radius:3px;font-size:10px;margin-left:4px;
+  font-weight:normal;vertical-align:middle}
+.nat-外资{background:#fff0f6;color:#c41d7f} .nat-合资{background:#fff7e6;color:#d46b08}
+.nat-股份{background:#f6ffed;color:#389e0d} .nat-民营{background:#e6f7ff;color:#096dd9}
+.nat-个体{background:#f5f5f5;color:#666}
+.rm{display:flex;gap:6px;margin-top:2px;font-size:10px;color:#999;flex-wrap:wrap}
+.ra{font-size:10px;color:#999;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rd{display:none;margin-top:4px;padding-top:4px;border-top:1px solid #f0f0f0;font-size:10px;color:#666}
+.rd td{padding:1px 3px}.rd td:last-child{text-align:right}
+.rd table{width:100%}
+.links{margin-top:3px;font-size:10px;display:flex;gap:8px;flex-wrap:wrap}
+.links a{text-decoration:none;font-weight:bold}
+.links a.boss{color:#00c2a8}.links a.zl{color:#1677ff}.links a.wuyi{color:#ff6600}.links a.web{color:#8c8c8c}
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="drawHint">在地图上按住鼠标拖拽画范围</div>
+
+<div id="bar">
+  <button class="btn-mode on" data-m="dist">行政区</button>
+  <button class="btn-mode" data-m="rect">拉框</button>
+  <button class="btn-mode" data-m="circle">画圆</button>
+  <button class="btn-mode" data-m="view">视野</button>
+  <span class="sep">|</span>
+  <div style="position:relative">
+    <button class="btn-dist on" id="btnDist">选择区域 &#9662;</button>
+    <div id="distDrop">
+      <label><input type="checkbox" value="黄岛区" checked> 黄岛区</label>
+      <label><input type="checkbox" value="市南区"> 市南区</label>
+      <label><input type="checkbox" value="市北区"> 市北区</label>
+      <label><input type="checkbox" value="李沧区"> 李沧区</label>
+      <label><input type="checkbox" value="崂山区"> 崂山区</label>
+      <label><input type="checkbox" value="城阳区"> 城阳区</label>
+      <label><input type="checkbox" value="即墨区"> 即墨区</label>
+      <label><input type="checkbox" value="胶州市"> 胶州市</label>
+      <label><input type="checkbox" value="平度市"> 平度市</label>
+      <label><input type="checkbox" value="莱西市"> 莱西市</label>
+      <div class="act">
+        <button id="btnSelAll">全选</button>
+        <button id="btnSelNone">清空</button>
+      </div>
+    </div>
+  </div>
+  <span class="sep">|</span>
+  <button class="btn-go" id="btnGo">开始搜索</button>
+  <button class="btn-cancel" id="btnCancel">取消</button>
+  <button class="btn-csv" id="btnCsv" disabled>导出CSV</button>
+  <button class="btn-home" id="btnHome">回家</button>
+</div>
+
+<div id="res">
+  <div class="rh">
+    <strong id="resTitle">结果</strong>
+    <div class="ctl">
+      <button id="btnList" class="on">列表</button>
+      <button id="btnMapOnly">仅地图</button>
+      <button id="resToggle">收起</button>
+    </div>
+  </div>
+  <div class="sortrow" id="sortRow">
+    <button class="on" data-s="total">综合排序</button>
+    <button data-s="distanceScore">距离最近</button>
+    <button data-s="scaleScore">规模最大</button>
+    <button data-s="welfareScore">福利最好</button>
+  </div>
+  <div class="rb" id="resBody">
+    <div class="prog" id="progWrap" style="display:none"><div id="progFill"></div></div>
+    <div class="pt" id="progText"></div>
+    <div id="resList"></div>
+  </div>
+</div>
+
+<div id="tip">提示：选"行政区"模式 + 勾选区域 → 点"开始搜索" | 右键设家 | Esc取消绘制</div>
+
+<script>
+// 高德安全密钥（JS API 2.0 数据服务必需）
+window._AMapSecurityConfig = { securityJsCode: '8c098a05e42da428b9fc42f2dbc47070' };
+</script>
+
+<script src="https://webapi.amap.com/maps?v=2.0&key=a3a3169723ae7b4ad9cafae574444664&plugin=AMap.PlaceSearch,AMap.Geocoder,AMap.MouseTool,AMap.DistrictSearch"></script>
+
+<script>
+// ============================================================
+//  配置
+// ============================================================
+var HOME = '青岛黄岛区学院路288号';
+var HLNG = 120.141, HLAT = 35.998;
+
+// 关键词：用最宽泛的词覆盖所有公司类型
+// 精简到最有效的15个关键词（公司负责全覆盖，其余补充行业漏网之鱼）
+var KEYS = ['公司','科技','工程','制造','商贸','贸易','电子','食品','化工','机械','物流','医疗','教育','建筑','房产'];
+
+var MATCH = ['科技','信息技术','网络','互联网','通信','电子','计算机','自动化',
+  '数据','智能','新能源','制造','检测','软件','工程','生物','医药','物流',
+  '教育','建筑','食品','化工','机械','新材料','环保','服装'];
+
+// ============================================================
+//  地图 & 家标记
+// ============================================================
+var map = new AMap.Map('map', {
+  zoom: 12, center: [HLNG, HLAT], mapStyle: 'amap://styles/normal',
+  dragEnable: true, scrollWheel: true, doubleClickZoom: true
+});
+
+var geocoder = new AMap.Geocoder({city: '青岛'});
+geocoder.getLocation(HOME, function(s, r) {
+  if (s === 'complete' && r.info === 'OK' && r.geocodes.length > 0) {
+    HLNG = r.geocodes[0].location.lng;
+    HLAT = r.geocodes[0].location.lat;
+  }
+  initHome();
+});
+
+var homeMarker = null, homeCircles = [];
+function initHome() {
+  homeMarker = new AMap.Marker({
+    position: [HLNG, HLAT], title: HOME,
+    label: { content: '我家', offset: new AMap.Pixel(0, -22) }
+  });
+  homeMarker.setMap(map);
+  [5, 10, 15, 20, 30].forEach(function(r) {
+    var c = new AMap.Circle({
+      center: [HLNG, HLAT], radius: r * 1000, strokeColor: '#ddd',
+      strokeWeight: 1, strokeOpacity: .6, fillOpacity: 0, strokeStyle: 'dashed'
+    });
+    c.setMap(map); homeCircles.push(c);
+  });
+}
+
+// ============================================================
+//  模式 & 状态
+// ============================================================
+var mode = 'dist';  // dist | rect | circle | view
+var drawObj = null, drawBounds = null, drawCenter = null, drawRadius = 0;
+var distPolygons = [];   // 行政区多边形
+var distBoundsAll = null; // 合并后的行政区 bounds
+var homeDist = {};       // {name: distance_from_home}
+
+// ============================================================
+//  MouseTool — 拉框/画圆
+// ============================================================
+var mouseTool = new AMap.MouseTool(map);
+
+function activateMouseTool() {
+  mouseTool.close(true);
+  map.setStatus({ dragEnable: true });
+  clearUserDraw();
+  clearDistrictShapes();
+  document.getElementById('drawHint').style.display = 'none';
+  showCancel();
+  if (mode === 'rect') {
+    mouseTool.rectangle({ strokeColor: '#1677ff', strokeWeight: 3, strokeOpacity: .8, fillColor: '#1677ff', fillOpacity: .12 });
+    document.getElementById('drawHint').style.display = 'block';
+    document.getElementById('tip').textContent = '拉框模式：在地图上按住拖拽画矩形，松开完成。Esc取消';
+  } else if (mode === 'circle') {
+    mouseTool.circle({ strokeColor: '#1677ff', strokeWeight: 3, strokeOpacity: .8, fillColor: '#1677ff', fillOpacity: .12 });
+    document.getElementById('drawHint').style.display = 'block';
+    document.getElementById('tip').textContent = '画圆模式：在地图上按住拖拽画圆，松开完成。Esc取消';
+  }
+}
+
+mouseTool.on('draw', function(e) {
+  clearUserDraw();
+  drawObj = e.obj;
+  if (mode === 'rect') {
+    drawBounds = e.obj.getBounds();
+    document.getElementById('tip').textContent = '[OK] 矩形已画好 — 点"开始搜索"';
+  } else {
+    var c = e.obj.getCenter();
+    drawCenter = [c.lng, c.lat];
+    drawRadius = e.obj.getRadius();
+    document.getElementById('tip').textContent = '[OK] 圆形已画好(约'+(drawRadius/1000).toFixed(1)+'km) — 点"开始搜索"';
+  }
+  mouseTool.close(false);
+  map.setStatus({ dragEnable: true });
+  document.getElementById('drawHint').style.display = 'none';
+  hideCancel();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    mouseTool.close(true);
+    map.setStatus({ dragEnable: true });
+    clearUserDraw();
+    document.getElementById('drawHint').style.display = 'none';
+    hideCancel();
+    document.getElementById('tip').textContent = '已取消。可自由移动地图，选模式后操作';
+  }
+});
+
+function clearUserDraw() {
+  if (drawObj) { map.remove(drawObj); drawObj = null; }
+  drawBounds = null; drawCenter = null; drawRadius = 0;
+}
+
+function clearDistrictShapes() {
+  distPolygons.forEach(function(p) { map.remove(p); });
+  distPolygons = [];
+  distBoundsAll = null;
+}
+
+// ============================================================
+//  工具栏事件
+// ============================================================
+document.getElementById('bar').addEventListener('click', function(e) {
+  var t = e.target;
+
+  // 取消按钮：随时可用
+  if (t.id === 'btnCancel' || (t.parentElement && t.parentElement.id === 'btnCancel')) {
+    cancelAll();
+    return;
+  }
+
+  if (isSearching) return;
+
+  // 模式按钮
+  if (t.classList.contains('btn-mode')) {
+    document.querySelectorAll('.btn-mode').forEach(function(b) { b.classList.remove('on'); });
+    t.classList.add('on');
+    mode = t.dataset.m;
+    clearUserDraw();
+    if (mode === 'dist' || mode === 'view') {
+      mouseTool.close(true); map.setStatus({ dragEnable: true });
+      document.getElementById('drawHint').style.display = 'none';
+      if (mode === 'view') {
+        document.getElementById('tip').textContent = '视野模式：移动/缩放地图到目标区域 → 点"开始搜索"搜当前屏幕内的公司';
+      } else {
+        document.getElementById('tip').textContent = '行政区模式：勾选区域 → 点"开始搜索"';
+      }
+      document.getElementById('btnDist').style.display = (mode === 'dist') ? '' : 'none';
+    } else {
+      document.getElementById('btnDist').style.display = 'none';
+      activateMouseTool();
+    }
+  }
+
+  // 排序
+  if (t.classList.contains('btn-sort') || (t.parentElement && t.parentElement.id === 'sortRow' && t.dataset.s)) {
+    var st = t.dataset.s || t.querySelector('[data-s]').dataset.s;
+    if (st) sortResults(st);
+  }
+});
+
+// 区选择下拉
+var btnDist = document.getElementById('btnDist');
+btnDist.addEventListener('click', function(e) {
+  e.stopPropagation();
+  var dd = document.getElementById('distDrop');
+  dd.style.display = (dd.style.display === 'block') ? 'none' : 'block';
+});
+document.addEventListener('click', function() { document.getElementById('distDrop').style.display = 'none'; });
+
+document.getElementById('btnSelAll').addEventListener('click', function() {
+  document.querySelectorAll('#distDrop input[type=checkbox]').forEach(function(c) { c.checked = true; });
+});
+document.getElementById('btnSelNone').addEventListener('click', function() {
+  document.querySelectorAll('#distDrop input[type=checkbox]').forEach(function(c) { c.checked = false; });
+});
+
+// 回家
+document.getElementById('btnHome').onclick = function() {
+  if (isSearching) return;
+  mouseTool.close(true); map.setStatus({ dragEnable: true });
+  clearUserDraw(); clearDistrictShapes();
+  document.getElementById('drawHint').style.display = 'none';
+  map.setCenter([HLNG, HLAT]); map.setZoom(13);
+  document.getElementById('tip').textContent = '已回到 ' + HOME;
+};
+
+// 结果面板切换
+document.getElementById('resToggle').onclick = function() {
+  var r = document.getElementById('res');
+  r.classList.toggle('mini');
+  this.textContent = r.classList.contains('mini') ? '展开' : '收起';
+};
+document.getElementById('btnList').onclick = function() {
+  document.getElementById('resList').parentElement.style.display = '';
+  document.getElementById('sortRow').style.display = '';
+  this.classList.add('on');
+  document.getElementById('btnMapOnly').classList.remove('on');
+};
+document.getElementById('btnMapOnly').onclick = function() {
+  document.getElementById('resList').parentElement.style.display = 'none';
+  document.getElementById('sortRow').style.display = 'none';
+  this.classList.add('on');
+  document.getElementById('btnList').classList.remove('on');
+};
+
+// 排序按钮
+document.getElementById('sortRow').addEventListener('click', function(e) {
+  if (e.target.dataset.s) {
+    document.querySelectorAll('#sortRow button').forEach(function(b) { b.classList.remove('on'); });
+    e.target.classList.add('on');
+    sortResults(e.target.dataset.s);
+  }
+});
+
+// 右键设家
+map.on('rightclick', function(e) {
+  if (isSearching) return;
+  var p = e.lnglat;
+  HLNG = p.lng; HLAT = p.lat;
+  HOME = '自定(' + p.lng.toFixed(4) + ',' + p.lat.toFixed(4) + ')';
+  if (homeMarker) map.remove(homeMarker);
+  homeMarker = new AMap.Marker({ position: [HLNG, HLAT], title: HOME, label: { content: '我家', offset: new AMap.Pixel(0, -22) } });
+  homeMarker.setMap(map);
+  homeCircles.forEach(function(c) { map.remove(c); }); homeCircles = [];
+  [5, 10, 15, 20, 30].forEach(function(r) {
+    var c = new AMap.Circle({ center: [HLNG, HLAT], radius: r * 1000, strokeColor: '#ddd', strokeWeight: 1, strokeOpacity: .6, fillOpacity: 0, strokeStyle: 'dashed' });
+    c.setMap(map); homeCircles.push(c);
+  });
+  document.getElementById('tip').textContent = '[OK] 家已更新! ' + p.lng.toFixed(4) + ',' + p.lat.toFixed(4) + ' | 搜索时距离以此为准';
+});
+
+// ============================================================
+//  搜索引擎
+// ============================================================
+var isSearching = false, allResults = [], currentSort = 'total';
+var markers = [];
+
+function getSelectedDistricts() {
+  var cbs = document.querySelectorAll('#distDrop input[type=checkbox]:checked');
+  return Array.from(cbs).map(function(c) { return c.value; });
+}
+
+function haversine(lng1, lat1, lng2, lat2) {
+  var R = 6371;
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLng = (lng2 - lng1) * Math.PI / 180;
+  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// 获取搜索目标
+function getSearchTargets(callback) {
+  if (mode === 'dist') {
+    // 行政区模式
+    var districts = getSelectedDistricts();
+    if (!districts.length) {
+      document.getElementById('tip').textContent = '请至少勾选一个区域';
+      callback(null); return;
+    }
+    resolveDistricts(districts, callback);
+  } else if (mode === 'rect') {
+    if (!drawBounds) {
+      document.getElementById('tip').textContent = '请先拉框画范围，再点搜索';
+      callback(null); return;
+    }
+    callback([{ label: '矩形区域', bounds: drawBounds }]);
+  } else if (mode === 'circle') {
+    if (!drawCenter || !drawRadius) {
+      document.getElementById('tip').textContent = '请先画圆，再点搜索';
+      callback(null); return;
+    }
+    // 圆 → 取外接正方形
+    var deg = drawRadius / 111000; // 米转度数（近似）
+    var b = new AMap.Bounds(
+      [drawCenter[0] - deg, drawCenter[1] - deg],
+      [drawCenter[0] + deg, drawCenter[1] + deg]
+    );
+    callback([{ label: '圆形区域(' + (drawRadius / 1000).toFixed(1) + 'km)', bounds: b }]);
+  } else if (mode === 'view') {
+    var vb = map.getBounds();
+    callback([{ label: '当前视野', bounds: vb }]);
+  }
+}
+
+// 解析行政区：先用 DistrictSearch 拿边界，不行就用 Geocoder 定位中心
+function resolveDistricts(districts, callback) {
+  var results = [];
+  var pending = districts.length;
+  var hasFailure = false;
+
+  districts.forEach(function(dist) {
+    var fullName = dist.indexOf('青岛') === 0 ? dist : '青岛市' + dist;
+
+    var done = false;
+    var timeout = setTimeout(function() {
+      if (done) return; done = true;
+      // 超时 → 用 Geocoder 定位中心
+      geocoder.getLocation(fullName, function(s, r) {
+        if (s === 'complete' && r.info === 'OK' && r.geocodes.length > 0) {
+          var loc = r.geocodes[0].location;
+          // 给一个约 20km 的 bounds
+          var deg = 0.18;
+          results.push({
+            label: dist,
+            bounds: new AMap.Bounds([loc.lng - deg, loc.lat - deg], [loc.lng + deg, loc.lat + deg]),
+            center: [loc.lng, loc.lat],
+            approx: true
+          });
+        } else { hasFailure = true; }
+        pending--;
+        if (pending <= 0) finish();
+      });
+    }, 5000);
+
+    if (typeof AMap.DistrictSearch !== 'function') {
+      clearTimeout(timeout);
+      // DistrictSearch 不可用，直接用 Geocoder 定位
+      done = true;
+      geocoder.getLocation(fullName, function(s, r) {
+        if (s === 'complete' && r.info === 'OK' && r.geocodes.length > 0) {
+          var loc = r.geocodes[0].location;
+          results.push({ label: dist, bounds: new AMap.Bounds([loc.lng - 0.18, loc.lat - 0.18], [loc.lng + 0.18, loc.lat + 0.18]), approx: true });
+        }
+        pending--;
+        if (pending <= 0) finish();
+      });
+      return;
+    }
+
+    var ds = null;
+    try {
+      ds = new AMap.DistrictSearch({ level: 'district', subdistrict: 0, extensions: 'all' });
+    } catch(e) {
+      clearTimeout(timeout); done = true;
+      geocoder.getLocation(fullName, function(s, r) {
+        if (s === 'complete' && r.info === 'OK' && r.geocodes.length > 0) {
+          var loc = r.geocodes[0].location;
+          results.push({ label: dist, bounds: new AMap.Bounds([loc.lng - 0.18, loc.lat - 0.18], [loc.lng + 0.18, loc.lat + 0.18]), approx: true });
+        }
+        pending--;
+        if (pending <= 0) finish();
+      });
+      return;
+    }
+
+    ds.search(fullName, function(status, result) {
+      if (done) return; done = true; clearTimeout(timeout);
+      if (status === 'complete' && result.districtList && result.districtList.length > 0) {
+        var d = result.districtList[0];
+        var bds = d.boundaries;
+        if (bds && bds[0] && bds[0].length > 10) {
+          // 画行政区边界
+          var pts = (typeof bds[0] === 'string' ? bds[0].split(';') : bds[0]);
+          var ring = [];
+          for (var j = 0; j < pts.length; j++) {
+            var p = (typeof pts[j] === 'string' ? pts[j].split(',') : pts[j]);
+            ring.push([parseFloat(p[0]), parseFloat(p[1])]);
+          }
+          var poly = new AMap.Polygon({
+            path: ring, strokeColor: '#ff8c00', strokeWeight: 3, strokeOpacity: .7,
+            fillColor: '#ff8c00', fillOpacity: .1
+          });
+          poly.setMap(map);
+          distPolygons.push(poly);
+
+          var bb = poly.getBounds();
+          results.push({ label: dist, bounds: bb, polygon: poly });
+          // 计算区中心到家的距离
+          var c = bb.getCenter();
+          homeDist[dist] = haversine(c.lng, c.lat, HLNG, HLAT);
+        } else {
+          hasFailure = true;
+        }
+      } else {
+        hasFailure = true;
+      }
+      pending--;
+      if (pending <= 0) finish();
+    });
+  });
+
+  function finish() {
+    if (results.length === 0) {
+      document.getElementById('tip').textContent = '未能解析任何区域，请检查输入或用圈选模式';
+      callback(null); return;
+    }
+    // 显示在地图上
+    if (results.length === 1 && results[0].polygon) {
+      map.setFitView([results[0].polygon], false, [60, 60, 450, 60]);
+    } else if (results.length > 1) {
+      // 合并所有 bounds
+      var allLng = [], allLat = [];
+      results.forEach(function(r) {
+        allLng.push(r.bounds.southwest.lng, r.bounds.northeast.lng);
+        allLat.push(r.bounds.southwest.lat, r.bounds.northeast.lat);
+      });
+      var merged = new AMap.Bounds(
+        [Math.min.apply(null, allLng), Math.min.apply(null, allLat)],
+        [Math.max.apply(null, allLng), Math.max.apply(null, allLat)]
+      );
+      map.setFitView([merged], false, [60, 60, 450, 60]);
+    }
+    callback(results);
+  }
+}
+
+// ============================================================
+//  主搜索 — 去掉 DistrictSearch，直接用地图坐标 + PlaceSearch
+// ============================================================
+document.getElementById('btnGo').onclick = function() {
+  if (isSearching) return;
+  isSearching = true; searchCancelled = false;
+  allResults = []; clearMarkers();
+  document.getElementById('res').style.display = 'flex';
+  document.getElementById('resList').innerHTML = '';
+  document.getElementById('resTitle').textContent = '准备搜索...';
+  document.getElementById('progWrap').style.display = 'block';
+  document.getElementById('progFill').style.width = '0%';
+  document.getElementById('progText').textContent = '正在规划搜索区域...';
+  document.getElementById('btnCsv').disabled = true;
+  showCancel();
+
+  // 确定搜索中心+半径（不用 DistrictSearch，直接从地图状态算）
+  var plans = [];
+  var collectTimer = null;
+
+  if (mode === 'dist') {
+    // 行政区：用 JS API Geocoder 定位区中心
+    var districts = getSelectedDistricts();
+    if (!districts.length) {
+      document.getElementById('tip').textContent = '请至少勾选一个区域'; searchDone(); return;
+    }
+    var searchStarted = false;
+    function fireSearch(plans) {
+      if (searchStarted) return;
+      searchStarted = true;
+      if (collectTimer) { clearTimeout(collectTimer); collectTimer = null; }
+      // 去重（同一区可能多次定位）
+      var seenLabels = {};
+      plans = plans.filter(function(p) { if (seenLabels[p.label]) return false; seenLabels[p.label] = true; return true; });
+      startSearch(plans);
+    }
+    var pending = districts.length;
+    document.getElementById('progText').textContent = '正在定位 ' + pending + ' 个区域...';
+    districts.forEach(function(d) {
+      var fullName = '青岛市' + d;
+      console.log('DEBUG Geocoder searching:', fullName);
+      geocoder.getLocation(fullName, function(status, result) {
+        console.log('DEBUG Geocoder cb:', d, 'status=' + status, result ? 'info=' + result.info : 'null');
+        if (status === 'complete' && result.info === 'OK' && result.geocodes.length > 0) {
+          var loc = result.geocodes[0].location;
+          console.log('DEBUG Geocoder OK:', d, 'lng=' + loc.lng, 'lat=' + loc.lat, 'address=' + result.geocodes[0].formattedAddress);
+          // 避免同区重复添加
+          if (!plans.some(function(p) { return p.label === d; })) {
+            plans.push({label: d, lng: loc.lng, lat: loc.lat, radius: 25000});
+          }
+          document.getElementById('tip').textContent = '已定位: ' + d;
+        }
+        pending--;
+        if (pending <= 0) {
+          if (plans.length === 0) {
+            var c = map.getCenter();
+            plans.push({label: '当前视野', lng: c.lng, lat: c.lat, radius: 20000});
+          }
+          fireSearch(plans);
+        }
+      });
+    });
+    // 10秒兜底（Geocoder 有时慢）
+    collectTimer = setTimeout(function() {
+      console.log('DEBUG Geocoder timeout fired, plans.length=' + plans.length + ' pending=' + pending);
+      if (plans.length === 0) {
+        var c = map.getCenter();
+        plans.push({label: '当前视野(兜底)', lng: c.lng, lat: c.lat, radius: 20000});
+      }
+      fireSearch(plans);
+    }, 10000);
+    return;
+  }
+
+  if (mode === 'rect') {
+    if (!drawBounds) { searchDone(); return; }
+    var sw = drawBounds.getSouthWest(), ne = drawBounds.getNorthEast();
+    plans.push({label: '矩形', lng: (sw.lng+ne.lng)/2, lat: (sw.lat+ne.lat)/2,
+      radius: Math.max(Math.abs(ne.lng-sw.lng), Math.abs(ne.lat-sw.lat))*111000/2});
+  } else if (mode === 'circle') {
+    if (!drawCenter || !drawRadius) { searchDone(); return; }
+    plans.push({label: '圆形', lng: drawCenter[0], lat: drawCenter[1], radius: drawRadius});
+  } else if (mode === 'view') {
+    var c = map.getCenter(), vb = map.getBounds();
+    var sw2 = vb.getSouthWest(), ne2 = vb.getNorthEast();
+    plans.push({label: '视野', lng: c.lng, lat: c.lat,
+      radius: Math.max(Math.abs(ne2.lng-sw2.lng), Math.abs(ne2.lat-sw2.lat))*111000/2});
+  }
+  // 限幅
+  plans.forEach(function(p) { p.radius = Math.min(50000, Math.max(1000, Math.round(p.radius))); });
+  startSearch(plans);
+
+  function startSearch(plans) {
+    if (searchCancelled) { searchDone(); return; }
+    if (!plans.length) { searchDone(); return; }
+    plans = plans.filter(function(p, i) {
+      return plans.findIndex(function(q) { return q.label === p.label; }) === i;
+    });
+
+    var WS_KEY = 'b756c2d47e44c7a36768bd8f2d2d7665';
+    var PAGE_SIZE = 25, MAX_PAGES = 8, FETCH_DELAY = 300;
+    var all = [], seen = {};
+    var planIdx = 0, currentPage = 1, pagesNeeded = 1;
+    var totalPagesEstimate = 0, pagesFetched = 0;
+    var finished = false;
+
+    document.getElementById('tip').textContent = 'REST API ' + plans.length + ' 区域 (type=公司企业)...';
+    document.getElementById('progText').textContent = '查询中...';
+
+    function fetchNextPage() {
+      if (finished || searchCancelled || planIdx >= plans.length) {
+        if (!finished) finishUp();
+        return;
+      }
+      var plan = plans[planIdx];
+      var url = 'https://restapi.amap.com/v3/place/around?key=' + WS_KEY +
+        '&location=' + plan.lng.toFixed(6) + ',' + plan.lat.toFixed(6) +
+        '&radius=' + plan.radius +
+        '&types=170000' +
+        '&offset=' + PAGE_SIZE + '&page=' + currentPage + '&extensions=all';
+
+      console.log('REST fetch', plan.label, 'p' + currentPage, 'r=' + plan.radius);
+
+      fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+        if (finished || searchCancelled) return;
+        pagesFetched++;
+        if (data.status === '1' && data.pois) {
+          data.pois.forEach(function(poi) {
+            var key = (poi.name || '') + '|' + (poi.address || '');
+            if (!seen[key]) { seen[key] = true; all.push(poi); }
+          });
+        }
+        if (currentPage === 1) {
+          var count = parseInt(data.count) || 0;
+          pagesNeeded = Math.min(Math.ceil(count / PAGE_SIZE), MAX_PAGES);
+          totalPagesEstimate += pagesNeeded;
+        }
+        var pct = totalPagesEstimate > 0 ? Math.round(pagesFetched / totalPagesEstimate * 100) : 0;
+        document.getElementById('progFill').style.width = pct + '%';
+        document.getElementById('progText').textContent = pagesFetched + '/' + totalPagesEstimate + ' 页 ' + all.length + '家';
+        document.getElementById('tip').textContent = plan.label + ' p' + currentPage + ' ' +
+          (data.status === '1' ? 'OK' : 'err') + ' [' + all.length + ']';
+        currentPage++;
+        if (currentPage > pagesNeeded) { planIdx++; currentPage = 1; pagesNeeded = 1; }
+        setTimeout(fetchNextPage, FETCH_DELAY);
+      }).catch(function(err) {
+        console.log('REST err:', err.message);
+        pagesFetched++; currentPage++;
+        if (currentPage > pagesNeeded) { planIdx++; currentPage = 1; pagesNeeded = 1; }
+        setTimeout(fetchNextPage, FETCH_DELAY);
+      });
+    }
+    fetchNextPage();
+
+    var fallbackTimer = setTimeout(function() {
+      if (!finished) { console.log('REST timeout'); finishUp(); }
+    }, 60000);
+
+    function finishUp() {
+      if (finished) return; finished = true; clearTimeout(fallbackTimer);
+      document.getElementById('progText').textContent = all.length + ' 家，打分...';
+      var scored = [];
+      var errCount = 0;
+      for (var i = 0; i < all.length; i++) {
+        try {
+          scored.push(score(all[i]));
+        } catch(e) {
+          errCount++;
+          if (errCount <= 3) console.log('score error[' + i + ']:', e.message, JSON.stringify(all[i]).substring(0, 200));
+        }
+      }
+      if (errCount) console.log('Total score errors:', errCount, '/', all.length);
+      scored.sort(function(a, b) { return b.total - a.total; });
+      allResults = scored;
+      try {
+        renderList(scored);
+        addMarkers(scored);
+      } catch(e) {
+        console.log('render error:', e.message);
+        document.getElementById('resList').innerHTML = '<div style=\"padding:20px;color:red\">渲染错误: ' + e.message + '</div>';
+      }
+      document.getElementById('btnCsv').disabled = (scored.length === 0);
+      document.getElementById('tip').textContent = scored.length ?
+        '[OK] ' + scored.length + ' 家 | 综合排序 | 点击看详情' :
+        '0结果 - REST API无返回';
+      searchDone();
+    }
+  }
+};
+
+var searchCancelled = false;
+
+function showCancel() {
+  document.getElementById('btnCancel').style.display = '';
+  document.getElementById('btnGo').style.display = 'none';
+}
+function hideCancel() {
+  document.getElementById('btnCancel').style.display = 'none';
+  document.getElementById('btnGo').style.display = '';
+}
+
+function cancelAll() {
+  searchCancelled = true;
+  mouseTool.close(true);
+  map.setStatus({ dragEnable: true });
+  clearUserDraw();
+  document.getElementById('drawHint').style.display = 'none';
+  document.getElementById('tip').textContent = '已取消。可自由移动地图';
+  hideCancel();
+  searchDone();
+}
+
+function searchDone() {
+  isSearching = false;
+  document.getElementById('progWrap').style.display = 'none';
+  document.getElementById('progText').textContent = '';
+  document.getElementById('btnGo').textContent = '开始搜索';
+  document.getElementById('btnGo').classList.remove('busy');
+  hideCancel();
+}
+
+// ============================================================
+//  打分
+// ============================================================
+function score(p) {
+  // 归一化 REST API 数据：某些字段可能是数组而非字符串
+  var n = (typeof p.name === 'string') ? p.name : '';
+  var b = (typeof p.biz_type === 'string') ? p.biz_type : (Array.isArray(p.biz_type) ? p.biz_type.join(' ') : '');
+  var c = (typeof p.type === 'string') ? p.type : (Array.isArray(p.type) ? p.type.join(' ') : '');
+  var tel = (typeof p.tel === 'string') ? p.tel : (Array.isArray(p.tel) && p.tel.length > 0 ? String(p.tel[0]) : '');
+  var web = (typeof p.website === 'string') ? p.website : (Array.isArray(p.website) && p.website.length > 0 ? String(p.website[0]) : '');
+  var email = (typeof p.email === 'string') ? p.email : (Array.isArray(p.email) && p.email.length > 0 ? String(p.email[0]) : '');
+  // rating 也可能是空数组
+  var rt = '';
+  if (p.biz_ext && p.biz_ext.rating) {
+    rt = (typeof p.biz_ext.rating === 'string') ? p.biz_ext.rating : (Array.isArray(p.biz_ext.rating) ? '' : String(p.biz_ext.rating || ''));
+  }
+  // REST API 返回 "lng,lat" 字符串，JS API 返回 {lng,lat} 对象，统一处理
+  var lng = null, lat = null;
+  if (p.location) {
+    if (typeof p.location === 'string') {
+      var parts = p.location.split(',');
+      lng = parseFloat(parts[0]); lat = parseFloat(parts[1]);
+    } else {
+      lng = p.location.lng; lat = p.location.lat;
+    }
+  }
+  var t = (n + ' ' + b + ' ' + c).toLowerCase();
+
+  // --- 距离 20% ---
+  var ds = 50;
+  var dkm = null;
+  if (lng && lat) {
+    dkm = haversine(lng, lat, HLNG, HLAT);
+    if (dkm <= 3) ds = 100;
+    else if (dkm <= 5) ds = 90;
+    else if (dkm <= 7) ds = 80;
+    else if (dkm <= 10) ds = 65;
+    else if (dkm <= 15) ds = 50;
+    else if (dkm <= 20) ds = 35;
+    else if (dkm <= 30) ds = 20;
+    else ds = 8;
+  }
+
+  // --- 企业性质 25% ---
+  var ns = 30;  // 基础分
+  var nature = '民营';
+  if (/外商独资|外国法人独资|外商投资|^外资|外国/.test(n)) { ns += 60; nature = '外资'; }
+  else if (/中外合资|合资/.test(n)) { ns += 50; nature = '合资'; }
+  else if (/股份有限公司/.test(n)) { ns += 55; nature = '股份'; }
+  else if (/有限责任公司/.test(n)) { ns += 40; nature = '民营'; }
+  else if (/有限公司/.test(n)) { ns += 35; nature = '民营'; }
+  else if (/有限合伙/.test(n)) { ns += 25; nature = '民营'; }
+  else if (/集团/.test(n) && /控股/.test(n)) { ns += 45; nature = '股份'; }
+  else if (/集团/.test(n)) { ns += 35; nature = '民营'; }
+  else if (/个体工商户/.test(n)) { ns += 10; nature = '个体'; }
+  else if (/工作室/.test(n)) { ns += 15; nature = '个体'; }
+  else if (/公司/.test(n)) { ns += 30; nature = '民营'; }
+  else { ns += 10; nature = '其他'; }
+
+  // --- 规模推断 20% ---
+  var ss = 20;
+  if (/集团|控股/.test(n)) ss += 30;
+  if (/股份/.test(n)) ss += 20;
+  if (/分公司|子公司|分支机构/.test(n)) ss += 25;
+  if (/连锁/.test(n)) ss += 15;
+  // 高德评分
+  if (rt) { var rf = parseFloat(rt); if (rf > 4.5) ss += 20; else if (rf > 4) ss += 15; else if (rf > 3.5) ss += 10; }
+
+  // --- 福利推断 20% ---
+  var ws = 20;
+  if (nature === '外资') ws += 50;
+  else if (nature === '股份') ws += 40;
+  else if (nature === '合资') ws += 35;
+  else if (nature === '民营') ws += 25;
+  else ws += 10;
+  if (tel) ws += 15;
+  if (web) ws += 10;
+  if (rt) { var rf2 = parseFloat(rt); if (rf2 > 4.5) ws += 12; else if (rf2 > 4) ws += 8; }
+
+  // --- 联系方式 15% ---
+  var cs = 10;
+  if (tel) cs += 55;
+  if (web) cs += 25;
+  if (email) cs += 10;
+
+  // --- 行业匹配（加分，不扣分）---
+  var indBonus = 0;
+  for (var i = 0; i < MATCH.length; i++) {
+    if (t.indexOf(MATCH[i].toLowerCase()) >= 0) indBonus += 4;
+  }
+  indBonus = Math.min(20, indBonus);
+
+  // 上限
+  ns = Math.min(100, ns); ss = Math.min(100, ss);
+  ws = Math.min(100, ws); cs = Math.min(100, cs); ds = Math.min(100, ds);
+
+  var total = ns * 0.25 + ds * 0.20 + ss * 0.20 + ws * 0.20 + cs * 0.15 + indBonus;
+
+  return {
+    name: n,
+  address: (typeof p.address === 'string' ? p.address : (typeof p.pname === 'string' ? p.pname : '')),
+    nature: nature,
+    total: Math.round(total * 10) / 10,
+    natureScore: Math.round(ns),
+    distanceScore: Math.round(ds),
+    scaleScore: Math.round(ss),
+    welfareScore: Math.round(ws),
+    contactScore: Math.round(cs),
+    phone: tel, website: web,
+    lng: lng, lat: lat,
+    distance: dkm,
+    amapRating: rt
+  };
+}
+
+// ============================================================
+//  排序
+// ============================================================
+function sortResults(by) {
+  currentSort = by;
+  var sorted = allResults.slice();
+  if (by === 'total') sorted.sort(function(a, b) { return b.total - a.total; });
+  else if (by === 'distanceScore') sorted.sort(function(a, b) { return b.distanceScore - a.distanceScore; });
+  else if (by === 'scaleScore') sorted.sort(function(a, b) { return b.scaleScore - a.scaleScore; });
+  else if (by === 'welfareScore') sorted.sort(function(a, b) { return b.welfareScore - a.welfareScore; });
+  renderList(sorted); addMarkers(sorted);
+}
+
+// ============================================================
+//  地图标记
+// ============================================================
+function clearMarkers() {
+  markers.forEach(function(m) { map.remove(m); }); markers = [];
+}
+
+function addMarkers(results) {
+  clearMarkers();
+  if (!results.length) return;
+  var valid = results.filter(function(r) { return r.lng && r.lat; });
+  if (!valid.length) return;
+
+  var lngs = [], lats = [];
+  valid.forEach(function(r, i) {
+    lngs.push(r.lng); lats.push(r.lat);
+    var color = r.total >= 70 ? '#52c41a' : (r.total >= 50 ? '#faad14' : '#ff4d4f');
+    var m = new AMap.Marker({
+      position: [r.lng, r.lat],
+      label: {
+        content: '<span style="display:inline-block;min-width:20px;height:20px;line-height:20px;text-align:center;background:' +
+          color + ';color:#fff;border-radius:10px;font-size:10px;font-weight:bold;padding:0 4px">' + (i + 1) + '</span>',
+        offset: new AMap.Pixel(-10, -10)
+      },
+      zIndex: 300 - i
+    });
+    m.on('click', (function(rr, col) {
+      return function() {
+        new AMap.InfoWindow({
+          content: '<div style="font-size:12px;max-width:280px"><strong>' + esc(rr.name) +
+            '</strong> <span style="background:' + col + ';color:#fff;padding:1px 6px;border-radius:3px;font-size:11px">' +
+            rr.total + '分</span><br>' + esc(rr.address || '') + '<br>' +
+            rr.nature + ' | ' + (rr.distance ? rr.distance.toFixed(1) + 'km' : '--') +
+            (rr.phone ? ' | ' + rr.phone : '') + '</div>',
+          offset: new AMap.Pixel(0, -30)
+        }).open(map, m.getPosition());
+      };
+    })(r, color));
+    m.setMap(map); markers.push(m);
+  });
+
+  map.setFitView(null, false, [60, 60, 450, 60]);
+}
+
+// ============================================================
+//  结果列表
+// ============================================================
+function renderList(results) {
+  if (!results.length) {
+    document.getElementById('resList').innerHTML =
+      '<div style="text-align:center;padding:30px;color:#999;line-height:2">当前范围内未找到公司<br>建议: 换区域 / 扩大视野 / 检查网络</div>';
+    document.getElementById('resTitle').textContent = '结果 0 家';
+    return;
+  }
+  var h = '';
+  for (var i = 0; i < results.length; i++) {
+    var r = results[i];
+    var cls = r.total >= 70 ? 'h' : (r.total >= 50 ? 'm' : 'l');
+    var dstStr = r.distance !== null ? r.distance.toFixed(1) + 'km' : '--';
+    var natCls = 'nat-' + r.nature;
+    var rid = 'row' + i;
+    h += '<div class="rrow ' + cls + '" id="' + rid + '" onclick="toggleDetail(\'' + rid + '\')">' +
+      '<div class="rt"><span class="rn">' + (i + 1) + '. ' + esc(r.name) +
+      '<span class="rnatur ' + natCls + '">' + r.nature + '</span></span>' +
+      '<span class="rs ' + cls + '">' + r.total + '</span></div>' +
+      '<div class="rm"><span>企业性质' + r.natureScore + '</span>' +
+      '<span>规模' + r.scaleScore + '</span>' +
+      '<span>福利' + r.welfareScore + '</span>' +
+      '<span>距离' + r.distanceScore + '</span></div>' +
+      '<div class="ra">' + esc(r.address) + ' | ' + dstStr +
+      (r.phone ? ' | ' + r.phone : '') + (r.amapRating ? ' | 高德'+r.amapRating+'星' : '') + '</div>' +
+      '<div class="links"><a class="boss" href="' + bossLink(r.name) +
+      '" target="_blank">BOSS直聘</a><a class="zl" href="' + zlLink(r.name) +
+      '" target="_blank">智联</a><a class="wuyi" href="' + wuyiLink(r.name) +
+      '" target="_blank">前程无忧</a>' + (r.website ? '<a class="web" href="' +
+      (r.website.indexOf('http')===0?r.website:'http://'+r.website) +
+      '" target="_blank">官网</a>' : '') + '</div>' +
+      '<div class="rd" id="detail' + i + '"><table>' +
+      '<tr><td>企业性质</td><td>' + r.natureScore + '</td></tr>' +
+      '<tr><td>规模推断</td><td>' + r.scaleScore + '</td></tr>' +
+      '<tr><td>福利推断</td><td>' + r.welfareScore + '</td></tr>' +
+      '<tr><td>距离分</td><td>' + r.distanceScore + ' (' + dstStr + ')</td></tr>' +
+      '<tr><td>联系方式</td><td>' + r.contactScore + '</td></tr>' +
+      '</table></div></div>';
+  }
+  document.getElementById('resList').innerHTML = h;
+  document.getElementById('resTitle').textContent = '结果 ' + results.length + ' 家';
+}
+
+function toggleDetail(rid) {
+  var idx = parseInt(rid.replace('row', ''));
+  var el = document.getElementById('detail' + idx);
+  if (el) el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
+function bossLink(name) {
+  return 'https://www.zhipin.com/web/geek/job?query=' + encodeURIComponent(name) + '&city=101190200';
+}
+function zlLink(name) {
+  return 'https://sou.zhaopin.com/?jl=698&kw=' + encodeURIComponent(name);
+}
+function wuyiLink(name) {
+  return 'https://we.51job.com/pc/search?keyword=' + encodeURIComponent(name) + '&area=370200';
+}
+
+// ============================================================
+//  CSV
+// ============================================================
+document.getElementById('btnCsv').onclick = function() {
+  if (!allResults.length) return;
+  function safeStr(v) { return String(v || '').replace(/"/g, '""'); }
+  var rows = ['﻿排名,总分,公司名,企业性质,地址,距离(km),企业性质分,规模分,福利分,距离分,联系方式分,电话,官网'];
+  for (var i = 0; i < allResults.length; i++) {
+    var r = allResults[i];
+    rows.push([
+      i + 1, r.total,
+      '"' + safeStr(r.name) + '"',
+      r.nature,
+      '"' + safeStr(r.address) + '"',
+      r.distance !== null ? r.distance.toFixed(1) : '',
+      r.natureScore, r.scaleScore, r.welfareScore, r.distanceScore, r.contactScore,
+      r.phone || '', r.website || ''
+    ].join(','));
+  }
+  var blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  var dt = new Date();
+  a.download = 'companies_' + dt.getFullYear() +
+    ('0' + (dt.getMonth() + 1)).slice(-2) +
+    ('0' + dt.getDate()).slice(-2) + '_' +
+    ('0' + dt.getHours()).slice(-2) +
+    ('0' + dt.getMinutes()).slice(-2) + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  document.getElementById('tip').textContent = '[OK] CSV已导出: ' + allResults.length + ' 家公司';
+};
+
+function esc(s) {
+  if (typeof s !== 'string') s = (s === null || s === undefined) ? '' : String(s);
+  return s ? s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
+}
+
+// ============================================================
+//  按 Enter 也开始搜索
+// ============================================================
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !isSearching && document.activeElement === document.body) {
+    document.getElementById('btnGo').click();
+  }
+});
+</script>
+</body>
+</html>
