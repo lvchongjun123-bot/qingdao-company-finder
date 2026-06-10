@@ -30,6 +30,8 @@ body{font-family:"Microsoft YaHei",sans-serif;overflow:hidden;background:#fff}
 .btn-home{background:#fff;color:#333;border:1px solid #d9d9d9!important;font-size:11px!important}
 .btn-marker{background:#f5f5f5;color:#333;border:1px solid #e0e0e0!important;font-size:11px!important}
 .btn-marker.on{background:#52c41a;color:#fff;border-color:#52c41a!important}
+.btn-job{background:#ff6600;color:#fff;font-size:12px!important}
+.btn-mylist{background:#722ed1;color:#fff;font-size:11px!important}
 .btn-r{background:#f5f5f5;color:#333;border:1px solid #e0e0e0!important;font-size:11px!important;padding:6px 8px!important}
 .btn-r.on{background:#1677ff;color:#fff;border-color:#1677ff!important}
 .btn-sort{background:#f5f5f5;color:#333;border:1px solid #e0e0e0!important;font-size:11px!important}
@@ -106,6 +108,26 @@ body{font-family:"Microsoft YaHei",sans-serif;overflow:hidden;background:#fff}
 .pager button.on{background:#1677ff;color:#fff;border-color:#1677ff}
 .pager button:disabled{color:#ccc;cursor:not-allowed;background:#f5f5f5}
 .pager .pg-info{font-size:11px;color:#999;margin:0 4px}
+
+/* ===== 收藏按钮 ===== */
+.btn-save{background:none;border:1px solid #d9d9d9;border-radius:4px;cursor:pointer;padding:2px 6px;font-size:13px;transition:.15s;color:#999;line-height:1}
+.btn-save.on{color:#f5a623;border-color:#f5a623;background:#fff7e6}
+.btn-save:hover{transform:scale(1.15)}
+
+/* ===== 我的名单面板 ===== */
+#savedPanel{display:none;position:fixed;top:0;right:0;z-index:500;width:420px;height:100vh;
+  background:#fff;box-shadow:-4px 0 20px rgba(0,0,0,.15);flex-direction:column;font-size:13px}
+#savedPanel .sh{padding:12px 14px;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center}
+#savedPanel .sh strong{color:#722ed1;font-size:15px}
+#savedPanel .sh button{background:none;border:1px solid #e0e0e0;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px}
+#savedPanel .sb{overflow-y:auto;flex:1;padding:8px}
+#savedPanel .srow{background:#fafafa;border:1px solid #f0f0f0;border-radius:6px;padding:8px 10px;margin-bottom:4px}
+#savedPanel .srow .rt{display:flex;justify-content:space-between;align-items:center}
+#savedPanel .srow .rn{font-weight:bold;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#savedPanel .srow .ra{font-size:10px;color:#999;margin-top:2px}
+#savedPanel .srow .op{display:flex;gap:6px;margin-top:4px}
+#savedPanel .srow .op a{font-size:10px;text-decoration:none;font-weight:bold}
+#savedPanel .empty{text-align:center;padding:40px;color:#999}
 </style>
 </head>
 <body>
@@ -145,6 +167,9 @@ body{font-family:"Microsoft YaHei",sans-serif;overflow:hidden;background:#fff}
   <button class="btn-home" id="btnHome">回家</button>
   <span class="sep">|</span>
   <button class="btn-marker on" id="btnMarker">显示标记 &#10003;</button>
+  <span class="sep">|</span>
+  <button class="btn-job" id="btnJob">查招聘</button>
+  <button class="btn-mylist" id="btnMyList">我的名单</button>
 </div>
 
 <div id="res">
@@ -171,6 +196,18 @@ body{font-family:"Microsoft YaHei",sans-serif;overflow:hidden;background:#fff}
 </div>
 
 <div id="tip">提示：选"行政区"模式 + 勾选区域 → 点"开始搜索" | 右键设家 | Esc取消绘制</div>
+
+<div id="savedPanel">
+  <div class="sh">
+    <strong>我的名单</strong>
+    <div style="display:flex;gap:6px">
+      <button id="btnExportSaved">导出CSV</button>
+      <button id="btnClearSaved">清空</button>
+      <button id="btnCloseSaved" style="background:#eee">✕</button>
+    </div>
+  </div>
+  <div class="sb" id="savedBody"><div class="empty">还没有收藏公司<br>搜索结果中点击 ⭐ 收藏</div></div>
+</div>
 
 <script>
 // 高德安全密钥（JS API 2.0 数据服务必需）
@@ -357,6 +394,85 @@ document.getElementById('btnSelNone').addEventListener('click', function() {
   document.querySelectorAll('#distDrop input[type=checkbox]').forEach(function(c) { c.checked = false; });
 });
 
+// 查招聘 — 批量打开黄岛区公司招聘链接
+document.getElementById('btnJob').onclick = function() {
+  if (isSearching || !allResults.length) {
+    alert('请先搜索出结果');
+    return;
+  }
+  var hd = allResults.filter(function(r) {
+    return r.address && r.address.indexOf('黄岛') >= 0;
+  });
+  if (!hd.length) {
+    alert('没有黄岛区的公司');
+    return;
+  }
+  var msg = '将打开 ' + hd.length + ' 家黄岛区公司的招聘链接\n（每家 5 个标签页 = ' + (hd.length * 5) + ' 个标签页）\n\n浏览器可能卡顿，确定继续？';
+  if (hd.length > 15) {
+    msg += '\n\n建议：先缩小搜索范围或先收藏目标公司';
+  }
+  if (!confirm(msg)) return;
+
+  var delay = 0;
+  hd.forEach(function(r) {
+    setTimeout(function() {
+      window.open(bossLink(r.name), '_blank');
+    }, delay);
+    delay += 80;
+    setTimeout(function() {
+      window.open(zlLink(r.name), '_blank');
+    }, delay);
+    delay += 80;
+    setTimeout(function() {
+      window.open(wuyiLink(r.name), '_blank');
+    }, delay);
+    delay += 80;
+    setTimeout(function() {
+      window.open(bdLink(r.name), '_blank');
+    }, delay);
+    delay += 80;
+    setTimeout(function() {
+      window.open(rcLink(r.name), '_blank');
+    }, delay);
+    delay += 80;
+  });
+  document.getElementById('tip').textContent = '[OK] 正在打开 ' + hd.length + ' 家公司的招聘链接...';
+};
+
+// 我的名单面板
+document.getElementById('btnMyList').onclick = function() {
+  renderSavedPanel();
+  document.getElementById('savedPanel').style.display = 'flex';
+};
+document.getElementById('btnCloseSaved').onclick = function() {
+  document.getElementById('savedPanel').style.display = 'none';
+};
+document.getElementById('btnClearSaved').onclick = function() {
+  if (!savedList.length) return;
+  if (!confirm('确定清空收藏名单？')) return;
+  savedList = [];
+  localStorage.removeItem('qd_saved_companies');
+  renderSavedPanel();
+  renderPage(currentPageNum);
+  document.getElementById('tip').textContent = '收藏名单已清空';
+};
+document.getElementById('btnExportSaved').onclick = function() {
+  if (!savedList.length) return;
+  function sf(v) { return String(v || '').replace(/"/g, '""'); }
+  var rows = ['﻿排名,总分,公司名,地址,企业性质,电话,官网'];
+  for (var i = 0; i < savedList.length; i++) {
+    var s = savedList[i];
+    rows.push([i+1, s.total, '"'+sf(s.name)+'"', '"'+sf(s.address)+'"', s.nature, s.phone||'', s.website||''].join(','));
+  }
+  var blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'saved_companies_' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  document.getElementById('tip').textContent = '[OK] 名单已导出: ' + savedList.length + ' 家';
+};
+
 // 标记开关
 document.getElementById('btnMarker').onclick = function() {
   if (isSearching) return;
@@ -436,6 +552,62 @@ var markers = [];
 var showMarkers = true;
 var currentPageNum = 1;
 var PAGE_SIZE_DISPLAY = 50;
+
+// ============================================================
+//  收藏名单
+// ============================================================
+var savedList = [];
+try {
+  var stored = localStorage.getItem('qd_saved_companies');
+  if (stored) savedList = JSON.parse(stored);
+} catch(e) { savedList = []; }
+
+function saveCompany(r) {
+  var key = r.name + '|' + (r.address || '');
+  if (savedList.some(function(s) { return s.name === r.name && s.address === r.address; })) return false;
+  savedList.push({
+    name: r.name, address: r.address, total: r.total, nature: r.nature,
+    phone: r.phone, website: r.website, lng: r.lng, lat: r.lat
+  });
+  localStorage.setItem('qd_saved_companies', JSON.stringify(savedList));
+  return true;
+}
+
+function removeSaved(r) {
+  savedList = savedList.filter(function(s) { return !(s.name === r.name && s.address === r.address); });
+  localStorage.setItem('qd_saved_companies', JSON.stringify(savedList));
+}
+
+function isSaved(r) {
+  return savedList.some(function(s) { return s.name === r.name && s.address === r.address; });
+}
+
+function renderSavedPanel() {
+  var el = document.getElementById('savedBody');
+  if (!savedList.length) {
+    el.innerHTML = '<div class="empty">还没有收藏公司<br>搜索结果中点击 ⭐ 收藏</div>';
+  } else {
+    var h = '';
+    for (var i = 0; i < savedList.length; i++) {
+      var s = savedList[i];
+      var cls = s.total >= 70 ? 'h' : (s.total >= 50 ? 'm' : 'l');
+      h += '<div class="srow"><div class="rt"><span class="rn">' + (i+1) + '. ' + esc(s.name) +
+        ' <span style="font-size:11px;color:#999">' + s.nature + '</span></span>' +
+        '<span style="font-weight:bold;color:' + (s.total>=70?'#52c41a':(s.total>=50?'#faad14':'#ff4d4f')) + '">' + s.total + '</span></div>' +
+        '<div class="ra">' + esc(s.address) + (s.phone ? ' | ' + s.phone : '') + '</div>' +
+        '<div class="op">' +
+        '<a class="boss" href="' + bossLink(s.name) + '" target="_blank">BOSS</a>' +
+        '<a class="zl" href="' + zlLink(s.name) + '" target="_blank">智联</a>' +
+        '<a class="wuyi" href="' + wuyiLink(s.name) + '" target="_blank">无忧</a>' +
+        '<a style="color:#ff6600" href="' + bdLink(s.name) + '" target="_blank">本地宝</a>' +
+        '<a style="color:#1677ff" href="' + rcLink(s.name) + '" target="_blank">人才网</a>' +
+        (s.website ? '<a class="web" href="' + (s.website.indexOf('http')===0?s.website:'http://'+s.website) + '" target="_blank">官网</a>' : '') +
+        ' <button style="font-size:10px;border:none;background:#ff4d4f;color:#fff;border-radius:3px;cursor:pointer;padding:1px 6px" onclick="removeSaved({name:\'' + esc(s.name).replace(/'/g,"\\'") + '\',address:\'' + esc(s.address||'').replace(/'/g,"\\'") + '\'});renderSavedPanel();renderPage(currentPageNum);">移除</button>' +
+        '</div></div>';
+    }
+    el.innerHTML = h;
+  }
+}
 
 function getSelectedDistricts() {
   var cbs = document.querySelectorAll('#distDrop input[type=checkbox]:checked');
@@ -1037,7 +1209,9 @@ function renderList(results, startIndex) {
     var rid = 'row' + i;
     h += '<div class="rrow ' + cls + '" id="' + rid + '" onclick="toggleDetail(\'' + rid + '\')">' +
       '<div class="rt"><span class="rn">' + (startIndex + i + 1) + '. ' + esc(r.name) +
-      '<span class="rnatur ' + natCls + '">' + r.nature + '</span></span>' +
+      '<span class="rnatur ' + natCls + '">' + r.nature + '</span>' +
+      ' <button class="btn-save' + (isSaved(r) ? ' on' : '') + '" onclick="event.stopPropagation();toggleSave(this,\'' +
+      esc(r.name).replace(/'/g,"\\'") + '\',\'' + esc(r.address||'').replace(/'/g,"\\'") + '\')" title="收藏">' + (isSaved(r) ? '★' : '☆') + '</button></span>' +
       '<span class="rs ' + cls + '">' + r.total + '</span></div>' +
       '<div class="rm"><span>企业性质' + r.natureScore + '</span>' +
       '<span>规模' + r.scaleScore + '</span>' +
@@ -1048,7 +1222,10 @@ function renderList(results, startIndex) {
       '<div class="links"><a class="boss" href="' + bossLink(r.name) +
       '" target="_blank">BOSS直聘</a><a class="zl" href="' + zlLink(r.name) +
       '" target="_blank">智联</a><a class="wuyi" href="' + wuyiLink(r.name) +
-      '" target="_blank">前程无忧</a>' + (r.website ? '<a class="web" href="' +
+      '" target="_blank">前程无忧</a>' +
+      ' <a style="color:#ff6600;font-size:10px" href="' + bdLink(r.name) + '" target="_blank">本地宝</a>' +
+      ' <a style="color:#1677ff;font-size:10px" href="' + rcLink(r.name) + '" target="_blank">人才网</a>' +
+      (r.website ? '<a class="web" href="' +
       (r.website.indexOf('http')===0?r.website:'http://'+r.website) +
       '" target="_blank">官网</a>' : '') + '</div>' +
       '<div class="rd" id="detail' + i + '"><table>' +
@@ -1078,6 +1255,12 @@ function zlLink(name) {
 }
 function wuyiLink(name) {
   return 'https://we.51job.com/pc/search?keyword=' + encodeURIComponent(name) + '&area=370200';
+}
+function bdLink(name) {
+  return 'https://www.baidu.com/s?wd=' + encodeURIComponent(name + ' 招聘 site:qd.bendibao.com');
+}
+function rcLink(name) {
+  return 'https://www.baidu.com/s?wd=' + encodeURIComponent(name + ' 招聘 site:rc.qingdao.gov.cn');
 }
 
 // ============================================================
@@ -1163,6 +1346,21 @@ document.getElementById('btnCsv').onclick = function() {
   URL.revokeObjectURL(a.href);
   document.getElementById('tip').textContent = '[OK] CSV已导出: ' + allResults.length + ' 家公司';
 };
+
+function toggleSave(btn, name, addr) {
+  var r = allResults.find(function(x) { return x.name === name && x.address === addr; });
+  if (!r) return;
+  if (isSaved(r)) {
+    removeSaved(r);
+    btn.classList.remove('on');
+    btn.textContent = '☆';
+  } else {
+    saveCompany(r);
+    btn.classList.add('on');
+    btn.textContent = '★';
+  }
+  renderSavedPanel();
+}
 
 function esc(s) {
   if (typeof s !== 'string') s = (s === null || s === undefined) ? '' : String(s);
