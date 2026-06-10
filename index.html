@@ -644,9 +644,19 @@ document.getElementById('btnGo').onclick = function() {
         if (status === 'complete' && result.info === 'OK' && result.geocodes.length > 0) {
           var loc = result.geocodes[0].location;
           console.log('DEBUG Geocoder OK:', d, 'lng=' + loc.lng, 'lat=' + loc.lat, 'address=' + result.geocodes[0].formattedAddress);
-          // 避免同区重复添加
-          if (!plans.some(function(p) { return p.label === d; })) {
-            plans.push({label: d, lng: loc.lng, lat: loc.lat, radius: 25000});
+          // 3×3 网格搜索，每个格点间距 0.11°（约12km），半径15km确保重叠覆盖
+          if (!plans.some(function(p) { return p.label && p.label.indexOf(d) === 0; })) {
+            var offsets = [-0.11, 0, 0.11];
+            for (var gi = 0; gi < offsets.length; gi++) {
+              for (var gj = 0; gj < offsets.length; gj++) {
+                plans.push({
+                  label: d + '#' + (gi*3+gj+1),
+                  lng: loc.lng + offsets[gi],
+                  lat: loc.lat + offsets[gj],
+                  radius: 15000
+                });
+              }
+            }
           }
           document.getElementById('tip').textContent = '已定位: ' + d;
         }
@@ -687,7 +697,10 @@ document.getElementById('btnGo').onclick = function() {
       radius: Math.max(Math.abs(ne2.lng-sw2.lng), Math.abs(ne2.lat-sw2.lat))*111000/2});
   }
   // 限幅
-  plans.forEach(function(p) { p.radius = Math.min(50000, Math.max(1000, Math.round(p.radius))); });
+  plans.forEach(function(p, i) {
+    p.label = (p.label || 'search') + (plans.length > 1 ? '#' + (i+1) : '');
+    p.radius = Math.min(50000, Math.max(1000, Math.round(p.radius)));
+  });
   startSearch(plans);
 
   function startSearch(plans) {
@@ -698,13 +711,14 @@ document.getElementById('btnGo').onclick = function() {
     });
 
     var WS_KEY = 'b756c2d47e44c7a36768bd8f2d2d7665';
-    var PAGE_SIZE = 25, MAX_PAGES = 8, FETCH_DELAY = 300;
+    var PAGE_SIZE = 25, MAX_PAGES = 20, FETCH_DELAY = 300;
     var all = [], seen = {};
     var planIdx = 0, currentPage = 1, pagesNeeded = 1;
     var totalPagesEstimate = 0, pagesFetched = 0;
     var finished = false;
+    var KEYWORDS = encodeURIComponent('公司|工厂|企业|科技|工程|制造|商贸|机械|物流');
 
-    document.getElementById('tip').textContent = 'REST API ' + plans.length + ' 区域 (type=公司企业)...';
+    document.getElementById('tip').textContent = 'REST API 网格搜索 ' + plans.length + ' 点...';
     document.getElementById('progText').textContent = '查询中...';
 
     function fetchNextPage() {
@@ -716,7 +730,7 @@ document.getElementById('btnGo').onclick = function() {
       var url = 'https://restapi.amap.com/v3/place/around?key=' + WS_KEY +
         '&location=' + plan.lng.toFixed(6) + ',' + plan.lat.toFixed(6) +
         '&radius=' + plan.radius +
-        '&types=170000' +
+        '&keywords=' + KEYWORDS +
         '&offset=' + PAGE_SIZE + '&page=' + currentPage + '&extensions=all';
 
       console.log('REST fetch', plan.label, 'p' + currentPage, 'r=' + plan.radius);
@@ -754,7 +768,7 @@ document.getElementById('btnGo').onclick = function() {
 
     var fallbackTimer = setTimeout(function() {
       if (!finished) { console.log('REST timeout'); finishUp(); }
-    }, 60000);
+    }, 120000);
 
     function finishUp() {
       if (finished) return; finished = true; clearTimeout(fallbackTimer);
