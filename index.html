@@ -1056,7 +1056,8 @@ function renderList(results, startIndex) {
       '<tr><td>规模推断</td><td>' + r.scaleScore + '</td></tr>' +
       '<tr><td>福利推断</td><td>' + r.welfareScore + '</td></tr>' +
       '<tr><td>距离分</td><td>' + r.distanceScore + ' (' + dstStr + ')</td></tr>' +
-      '<tr><td>联系方式</td><td>' + r.contactScore + '</td></tr>' +
+      '<tr><td>电话</td><td>' + (r.phone || '—') + '</td></tr>' +
+      (r.website ? '<tr><td>官网</td><td>' + esc(r.website) + '</td></tr>' : '') +
       '</table></div></div>';
   }
   document.getElementById('resList').innerHTML = h;
