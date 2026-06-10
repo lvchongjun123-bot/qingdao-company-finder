@@ -32,7 +32,12 @@ for(var i=0;i<divs.length;i++){
   }
 }
 
-// 方法2: 扫描 window 下的全局变量
+// 方法2a: 直接检测常见全局变量名（新版 amap.com 用 window.themap）
+if(!map && window.themap && window.themap.getCenter && window.themap.getZoom() > 0){
+  map = window.themap;
+}
+
+// 方法2b: 扫描 window 下的全局变量
 if(!map){
   var keys = Object.keys(window);
   for(var i=0;i<keys.length;i++){
@@ -249,6 +254,7 @@ function score(p){
 // ========== 搜索 (REST API) ==========
 var isSearching=false,allResults=[];
 var WS_KEY='b756c2d47e44c7a36768bd8f2d2d7665';  // 高德 Web 服务 Key
+var API_BASE='https:'+'//restapi.amap.com/v3/place/around';  // 拼接避免压缩工具误删
 
 document.getElementById('cfGo').onclick=function(){
   if(isSearching)return;
@@ -269,7 +275,7 @@ document.getElementById('cfGo').onclick=function(){
   function fetchNext(){
     if(kwIdx>=KEYS.length){finish(all);return;}
     var kw=KEYS[kwIdx];
-    var url='https://restapi.amap.com/v3/place/around?key='+WS_KEY+
+    var url=API_BASE+'?key='+WS_KEY+
       '&location='+center.lng.toFixed(6)+','+center.lat.toFixed(6)+
       '&radius='+radius+'&keywords='+encodeURIComponent(kw)+
       '&offset='+PAGE_SIZE+'&page='+page+'&extensions=all';

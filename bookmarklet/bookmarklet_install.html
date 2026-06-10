@@ -65,7 +65,7 @@ var SCRIPT_URL;  // 将在下面生成
   xhr.onload = function() {
     var code = xhr.responseText
       .replace(/\/\*[\s\S]*?\*\//g, '')
-      .replace(/\/\/.*/g, '')
+      .replace(/(?<!https:)\/\/ .*/g, '')
       .replace(/\n\s*/g, ' ')
       .replace(/\s{2,}/g, ' ')
       .trim();
