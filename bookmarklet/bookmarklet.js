@@ -206,6 +206,8 @@ function score(p){
   var tel=(typeof p.tel==='string')?p.tel:(Array.isArray(p.tel)&&p.tel.length>0?String(p.tel[0]):'');
   var web=(typeof p.website==='string')?p.website:(Array.isArray(p.website)&&p.website.length>0?String(p.website[0]):'');
   var email=(typeof p.email==='string')?p.email:(Array.isArray(p.email)&&p.email.length>0?String(p.email[0]):'');
+  var addr=(typeof p.address==='string')?p.address:(Array.isArray(p.address)&&p.address.length>0?String(p.address[0]):'');
+  var pname=(typeof p.pname==='string')?p.pname:(Array.isArray(p.pname)&&p.pname.length>0?String(p.pname[0]):'');
   var rt='';
   if(p.biz_ext&&p.biz_ext.rating){
     rt=(typeof p.biz_ext.rating==='string')?p.biz_ext.rating:(Array.isArray(p.biz_ext.rating)?'':String(p.biz_ext.rating||''));
@@ -246,7 +248,7 @@ function score(p){
   ss=Math.min(100,ss);
   var total=ts*.35+ss*.25+ind*.20+ds*.10+cs*.10;
   var dst=lng&&lat?dist(lng,lat,HLNG,HLAT):null;
-  return{name:n,address:p.address||p.pname||'',companyType:ct,typeScore:ts,
+  return{name:n,address:addr||pname||'',companyType:ct,typeScore:ts,
     scaleScore:ss,industryScore:ind,distanceScore:ds,contactScore:cs,
     total:Math.round(total*10)/10,phone:tel||'',lng:lng,lat:lat,distance:dst};
 }
