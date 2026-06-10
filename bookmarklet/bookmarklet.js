@@ -273,6 +273,7 @@ document.getElementById('cfGo').onclick=function(){
 
   var all=[],seen={},kwIdx=0,page=1,totalPages=0;
   var MAX_PAGES=8,PAGE_SIZE=25,DELAY=300;
+  var errCount=0, lastErr='';
 
   function fetchNext(){
     if(kwIdx>=KEYS.length){finish(all);return;}
@@ -283,7 +284,11 @@ document.getElementById('cfGo').onclick=function(){
       '&offset='+PAGE_SIZE+'&page='+page+'&extensions=all';
 
     fetch(url).then(function(r){return r.json();}).then(function(data){
-      if(data.status==='1'&&data.pois){
+      if(data.status!=='1'){
+        errCount++;
+        lastErr='API status='+data.status+' info='+(data.info||'');
+        console.log('REST bad status:',lastErr);
+      } else if(data.pois){
         data.pois.forEach(function(poi){
           var k=poi.name+'|'+(poi.address||'');
           if(!seen[k]){seen[k]=true;all.push(poi);}
@@ -295,20 +300,29 @@ document.getElementById('cfGo').onclick=function(){
       }
       page++;
       if(page>totalPages){kwIdx++;page=1;totalPages=0;}
-
-      var pct=Math.round(kwIdx/KEYS.length*100);
-      document.getElementById('cfProgFill').style.width=pct+'%';
-      document.getElementById('cfProgText').textContent=kwIdx+'/'+KEYS.length+' 关键词 '+all.length+'家';
-      msg.textContent='['+(kwIdx+1)+'/'+KEYS.length+'] '+kw+' p'+(page-1)+' ['+all.length+'家]';
-
+      updateProgress();
       setTimeout(fetchNext,DELAY);
     }).catch(function(err){
-      console.log('REST err:',err.message);
+      errCount++;
+      lastErr=err.message;
+      console.log('REST fetch err:',err.message);
       page++;
       if(page>totalPages){kwIdx++;page=1;totalPages=0;}
+      updateProgress();
       setTimeout(fetchNext,DELAY);
     });
   }
+
+  function updateProgress(){
+    var pct=Math.round(kwIdx/KEYS.length*100);
+    document.getElementById('cfProgFill').style.width=pct+'%';
+    var statusText=kwIdx+'/'+KEYS.length+' 关键词 '+all.length+'家';
+    if(errCount>0) statusText+=' [ERR:'+errCount+']';
+    document.getElementById('cfProgText').textContent=statusText;
+    msg.textContent='['+(kwIdx+1)+'/'+KEYS.length+'] '+kw+' ['+all.length+'家]'+
+      (lastErr?' | '+lastErr.substring(0,50):'');
+  }
+
   fetchNext();
 };
 
@@ -333,6 +347,8 @@ function finish(all){
   if(scored.length){
     document.getElementById('cfOut').disabled=false;
     msg.textContent='[OK] '+scored.length+' 家公司 (排除'+ex+'家个体户/工作室)';
+  }else if(errCount>0){
+    msg.textContent='[FAIL] API请求失败'+errCount+'次 | '+lastErr.substring(0,60)+' | 点右键检查网络';
   }else{
     msg.textContent='未找到公司，请扩大半径或换个区域';
   }
