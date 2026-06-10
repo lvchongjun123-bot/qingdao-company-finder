@@ -28,6 +28,8 @@ body{font-family:"Microsoft YaHei",sans-serif;overflow:hidden;background:#fff}
 .btn-csv:disabled{background:#e8e8e8;color:#bbb;cursor:not-allowed}
 .btn-cancel{background:#ff4d4f;color:#fff;font-size:13px!important;display:none}
 .btn-home{background:#fff;color:#333;border:1px solid #d9d9d9!important;font-size:11px!important}
+.btn-marker{background:#f5f5f5;color:#333;border:1px solid #e0e0e0!important;font-size:11px!important}
+.btn-marker.on{background:#52c41a;color:#fff;border-color:#52c41a!important}
 .btn-r{background:#f5f5f5;color:#333;border:1px solid #e0e0e0!important;font-size:11px!important;padding:6px 8px!important}
 .btn-r.on{background:#1677ff;color:#fff;border-color:#1677ff!important}
 .btn-sort{background:#f5f5f5;color:#333;border:1px solid #e0e0e0!important;font-size:11px!important}
@@ -134,6 +136,8 @@ body{font-family:"Microsoft YaHei",sans-serif;overflow:hidden;background:#fff}
   <button class="btn-cancel" id="btnCancel">取消</button>
   <button class="btn-csv" id="btnCsv" disabled>导出CSV</button>
   <button class="btn-home" id="btnHome">回家</button>
+  <span class="sep">|</span>
+  <button class="btn-marker on" id="btnMarker">显示标记 &#10003;</button>
 </div>
 
 <div id="res">
@@ -345,6 +349,22 @@ document.getElementById('btnSelNone').addEventListener('click', function() {
   document.querySelectorAll('#distDrop input[type=checkbox]').forEach(function(c) { c.checked = false; });
 });
 
+// 标记开关
+document.getElementById('btnMarker').onclick = function() {
+  if (isSearching) return;
+  showMarkers = !showMarkers;
+  var btn = document.getElementById('btnMarker');
+  if (showMarkers) {
+    btn.classList.add('on');
+    btn.innerHTML = '显示标记 &#10003;';
+    if (allResults.length) addMarkers(getCurrentPage());
+  } else {
+    btn.classList.remove('on');
+    btn.innerHTML = '显示标记 ✗';
+    clearMarkers();
+  }
+};
+
 // 回家
 document.getElementById('btnHome').onclick = function() {
   if (isSearching) return;
@@ -405,6 +425,7 @@ map.on('rightclick', function(e) {
 // ============================================================
 var isSearching = false, allResults = [], currentSort = 'total';
 var markers = [];
+var showMarkers = true;
 
 function getSelectedDistricts() {
   var cbs = document.querySelectorAll('#distDrop input[type=checkbox]:checked');
@@ -753,7 +774,7 @@ document.getElementById('btnGo').onclick = function() {
       allResults = scored;
       try {
         renderList(scored);
-        addMarkers(scored);
+        if (showMarkers) { addMarkers(scored); }
       } catch(e) {
         console.log('render error:', e.message);
         document.getElementById('resList').innerHTML = '<div style=\"padding:20px;color:red\">渲染错误: ' + e.message + '</div>';
@@ -923,7 +944,8 @@ function sortResults(by) {
   else if (by === 'distanceScore') sorted.sort(function(a, b) { return b.distanceScore - a.distanceScore; });
   else if (by === 'scaleScore') sorted.sort(function(a, b) { return b.scaleScore - a.scaleScore; });
   else if (by === 'welfareScore') sorted.sort(function(a, b) { return b.welfareScore - a.welfareScore; });
-  renderList(sorted); addMarkers(sorted);
+  renderList(sorted);
+  if (showMarkers) { addMarkers(sorted); } else { clearMarkers(); }
 }
 
 // ============================================================
@@ -934,6 +956,7 @@ function clearMarkers() {
 }
 
 function addMarkers(results) {
+  if (!showMarkers) { clearMarkers(); return; }
   clearMarkers();
   if (!results.length) return;
   var valid = results.filter(function(r) { return r.lng && r.lat; });
