@@ -12,31 +12,33 @@ body{font-family:"Microsoft YaHei",sans-serif;overflow:hidden;background:#fff}
 
 /* ===== 顶栏 ===== */
 #bar{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:200;
-  display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center;
-  background:rgba(255,255,255,.97);padding:8px 12px;
-  border-radius:10px;box-shadow:0 2px 16px rgba(0,0,0,.12)}
-#bar button{padding:8px 12px;border:none;border-radius:6px;font-size:12px;
+  background:rgba(255,255,255,.97);border-radius:10px;
+  box-shadow:0 2px 16px rgba(0,0,0,.12);font-size:12px;overflow:hidden}
+#bar .r1,#bar .r2{display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:center}
+#bar .r1{padding:8px 10px 6px}
+#bar .r2{padding:6px 10px 8px;background:#fafafa;border-top:1px solid #f0f0f0}
+#bar button{padding:5px 10px;border:none;border-radius:5px;font-size:11px;
   cursor:pointer;font-weight:bold;white-space:nowrap;transition:.15s}
 #bar button:hover{opacity:.85;transform:translateY(-1px)}
-.btn-mode{background:#fff;color:#333;border:1px solid #d9d9d9!important}
+.btn-mode{background:#fff;color:#555;border:1.5px solid #d9d9d9!important}
 .btn-mode.on{background:#1677ff;color:#fff;border-color:#1677ff!important}
-.btn-dist{background:#fff;color:#333;border:1px solid #d9d9d9!important;position:relative}
+.btn-dist{background:#fff;color:#555;border:1.5px solid #d9d9d9!important;position:relative;font-size:11px!important}
 .btn-dist.on{background:#722ed1;color:#fff;border-color:#722ed1!important}
-.btn-go{background:#1677ff;color:#fff;font-size:15px!important;padding:10px 22px!important}
+.btn-go{background:#1677ff;color:#fff;font-size:14px!important;padding:7px 20px!important;min-width:90px}
 .btn-go.busy{background:#faad14;pointer-events:none}
-.btn-csv{background:#52c41a;color:#fff}
-.btn-csv:disabled{background:#e8e8e8;color:#bbb;cursor:not-allowed}
-.btn-cancel{background:#ff4d4f;color:#fff;font-size:13px!important;display:none}
-.btn-home{background:#fff;color:#333;border:1px solid #d9d9d9!important;font-size:11px!important}
-.btn-marker{background:#f5f5f5;color:#333;border:1px solid #e0e0e0!important;font-size:11px!important}
-.btn-marker.on{background:#52c41a;color:#fff;border-color:#52c41a!important}
-.btn-job{background:#ff6600;color:#fff;font-size:12px!important}
-.btn-mylist{background:#722ed1;color:#fff;font-size:11px!important}
-.btn-r{background:#f5f5f5;color:#333;border:1px solid #e0e0e0!important;font-size:11px!important;padding:6px 8px!important}
+.btn-csv{background:#fff;color:#333;border:1.5px solid #d9d9d9!important;font-size:11px!important}
+.btn-csv:disabled{background:#f5f5f5;color:#ccc;cursor:not-allowed;border-color:#eee!important}
+.btn-cancel{background:#ff4d4f;color:#fff;font-size:11px!important;display:none}
+.btn-home{background:#fff;color:#333;border:1.5px solid #d9d9d9!important;font-size:11px!important}
+.btn-marker{background:#f6ffed;color:#52c41a;border:1.5px solid #b7eb8f!important;font-size:11px!important}
+.btn-marker.off{background:#fff1f0;color:#ff4d4f;border-color:#ffa39e!important}
+.btn-job{background:#fff7e6;color:#d46b08;border:1.5px solid #ffd591!important;font-size:11px!important}
+.btn-mylist{background:#f9f0ff;color:#722ed1;border:1.5px solid #d3adf7!important;font-size:11px!important}
+.btn-r{background:#f5f5f5;color:#333;border:1px solid #e0e0e0!important;font-size:11px!important;padding:4px 6px!important}
 .btn-r.on{background:#1677ff;color:#fff;border-color:#1677ff!important}
 .btn-sort{background:#f5f5f5;color:#333;border:1px solid #e0e0e0!important;font-size:11px!important}
 .btn-sort.on{background:#fa8c16;color:#fff;border-color:#fa8c16!important}
-.sep{color:#ddd;margin:0 2px;font-size:14px;user-select:none}
+.sep{color:#e0e0e0;margin:0 1px;font-size:14px;user-select:none}
 
 /* ===== 区选择下拉 ===== */
 #distDrop{display:none;position:absolute;top:100%;left:0;margin-top:4px;
@@ -136,40 +138,40 @@ body{font-family:"Microsoft YaHei",sans-serif;overflow:hidden;background:#fff}
 <div id="drawHint">在地图上按住鼠标拖拽画范围</div>
 
 <div id="bar">
-  <button class="btn-mode on" data-m="dist">行政区</button>
-  <button class="btn-mode" data-m="rect">拉框</button>
-  <button class="btn-mode" data-m="circle">画圆</button>
-  <button class="btn-mode" data-m="view">视野</button>
-  <span class="sep">|</span>
-  <div style="position:relative">
-    <button class="btn-dist on" id="btnDist">选择区域 &#9662;</button>
-    <div id="distDrop">
-      <label><input type="checkbox" value="黄岛区" checked> 黄岛区</label>
-      <label><input type="checkbox" value="市南区"> 市南区</label>
-      <label><input type="checkbox" value="市北区"> 市北区</label>
-      <label><input type="checkbox" value="李沧区"> 李沧区</label>
-      <label><input type="checkbox" value="崂山区"> 崂山区</label>
-      <label><input type="checkbox" value="城阳区"> 城阳区</label>
-      <label><input type="checkbox" value="即墨区"> 即墨区</label>
-      <label><input type="checkbox" value="胶州市"> 胶州市</label>
-      <label><input type="checkbox" value="平度市"> 平度市</label>
-      <label><input type="checkbox" value="莱西市"> 莱西市</label>
-      <div class="act">
-        <button id="btnSelAll">全选</button>
-        <button id="btnSelNone">清空</button>
+  <div class="r1">
+    <button class="btn-mode on" data-m="dist">行政区</button>
+    <button class="btn-mode" data-m="rect">拉框</button>
+    <button class="btn-mode" data-m="circle">画圆</button>
+    <button class="btn-mode" data-m="view">视野</button>
+    <div style="position:relative">
+      <button class="btn-dist on" id="btnDist">选择区域 &#9662;</button>
+      <div id="distDrop">
+        <label><input type="checkbox" value="黄岛区" checked> 黄岛区</label>
+        <label><input type="checkbox" value="市南区"> 市南区</label>
+        <label><input type="checkbox" value="市北区"> 市北区</label>
+        <label><input type="checkbox" value="李沧区"> 李沧区</label>
+        <label><input type="checkbox" value="崂山区"> 崂山区</label>
+        <label><input type="checkbox" value="城阳区"> 城阳区</label>
+        <label><input type="checkbox" value="即墨区"> 即墨区</label>
+        <label><input type="checkbox" value="胶州市"> 胶州市</label>
+        <label><input type="checkbox" value="平度市"> 平度市</label>
+        <label><input type="checkbox" value="莱西市"> 莱西市</label>
+        <div class="act">
+          <button id="btnSelAll">全选</button>
+          <button id="btnSelNone">清空</button>
+        </div>
       </div>
     </div>
+    <button class="btn-go" id="btnGo">开始搜索</button>
+    <button class="btn-cancel" id="btnCancel">取消</button>
   </div>
-  <span class="sep">|</span>
-  <button class="btn-go" id="btnGo">开始搜索</button>
-  <button class="btn-cancel" id="btnCancel">取消</button>
-  <button class="btn-csv" id="btnCsv" disabled>导出CSV</button>
-  <button class="btn-home" id="btnHome">回家</button>
-  <span class="sep">|</span>
-  <button class="btn-marker on" id="btnMarker">显示标记 &#10003;</button>
-  <span class="sep">|</span>
-  <button class="btn-job" id="btnJob">查招聘</button>
-  <button class="btn-mylist" id="btnMyList">我的名单</button>
+  <div class="r2">
+    <button class="btn-csv" id="btnCsv" disabled>导出CSV</button>
+    <button class="btn-home" id="btnHome">回家</button>
+    <button class="btn-marker on" id="btnMarker">显示标记</button>
+    <button class="btn-job" id="btnJob">查招聘</button>
+    <button class="btn-mylist" id="btnMyList">我的名单</button>
+  </div>
 </div>
 
 <div id="res">
@@ -479,12 +481,12 @@ document.getElementById('btnMarker').onclick = function() {
   showMarkers = !showMarkers;
   var btn = document.getElementById('btnMarker');
   if (showMarkers) {
-    btn.classList.add('on');
-    btn.innerHTML = '显示标记 &#10003;';
+    btn.classList.remove('off');
+    btn.textContent = '显示标记';
     if (allResults.length) addMarkers(getCurrentPage());
   } else {
-    btn.classList.remove('on');
-    btn.innerHTML = '显示标记 ✗';
+    btn.classList.add('off');
+    btn.textContent = '隐藏标记';
     clearMarkers();
   }
 };
