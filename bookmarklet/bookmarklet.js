@@ -194,8 +194,25 @@ function dist(l1,t1,l2,t2){
 }
 
 function score(p){
-  var n=p.name||'',b=p.biz_type||'',c=p.type||'';
-  var lng=p.location?p.location.lng:null,lat=p.location?p.location.lat:null;
+  // 归一化 REST API 数据：某些字段可能是数组而非字符串
+  var n=(typeof p.name==='string')?p.name:'';
+  var b=(typeof p.biz_type==='string')?p.biz_type:(Array.isArray(p.biz_type)?p.biz_type.join(' '):'');
+  var c=(typeof p.type==='string')?p.type:(Array.isArray(p.type)?p.type.join(' '):'');
+  var tel=(typeof p.tel==='string')?p.tel:(Array.isArray(p.tel)&&p.tel.length>0?String(p.tel[0]):'');
+  var web=(typeof p.website==='string')?p.website:(Array.isArray(p.website)&&p.website.length>0?String(p.website[0]):'');
+  var email=(typeof p.email==='string')?p.email:(Array.isArray(p.email)&&p.email.length>0?String(p.email[0]):'');
+  var rt='';
+  if(p.biz_ext&&p.biz_ext.rating){
+    rt=(typeof p.biz_ext.rating==='string')?p.biz_ext.rating:(Array.isArray(p.biz_ext.rating)?'':String(p.biz_ext.rating||''));
+  }
+  // REST API 返回 "lng,lat" 字符串，JS API 返回 {lng,lat} 对象，统一处理
+  var lng=null,lat=null;
+  if(p.location){
+    if(typeof p.location==='string'){
+      var parts=p.location.split(',');
+      lng=parseFloat(parts[0]);lat=parseFloat(parts[1]);
+    }else{lng=p.location.lng;lat=p.location.lat;}
+  }
   var ts,ct;
   if(/外商独资|外国法人独资|外资|外商投资/.test(n)){ts=100;ct='外企独资'}
   else if(/中外合资|中外合作/.test(n)){ts=95;ct='中外合资'}
@@ -217,21 +234,21 @@ function score(p){
     var d=dist(lng,lat,HLNG,HLAT);
     if(d<=7)ds=100;else if(d<=10)ds=80;else if(d<=15)ds=60;else if(d<=20)ds=40;else if(d<=30)ds=20;else ds=5;
   }
-  var cs=0;if(p.tel)cs+=50;if(p.website)cs+=30;if(p.email)cs+=20;cs=Math.min(100,cs+20);
+  var cs=0;if(tel)cs+=50;if(web)cs+=30;if(email)cs+=20;cs=Math.min(100,cs+20);
   var ss=30;if(/集团/.test(n))ss+=40;if(/分公司|子公司/.test(n))ss+=20;if(/连锁/.test(n))ss+=10;
   if(/科技|高新|园区/.test(b))ss+=10;if(/商务写字楼|公司企业/.test(c))ss+=10;if(p.business_area)ss+=5;
-  var rt=(p.biz_ext&&p.biz_ext.rating)?p.biz_ext.rating:'';
   if(rt){var f=parseFloat(rt);if(f>4)ss+=10;else if(f>3)ss+=5;}
   ss=Math.min(100,ss);
   var total=ts*.35+ss*.25+ind*.20+ds*.10+cs*.10;
   var dst=lng&&lat?dist(lng,lat,HLNG,HLAT):null;
   return{name:n,address:p.address||p.pname||'',companyType:ct,typeScore:ts,
     scaleScore:ss,industryScore:ind,distanceScore:ds,contactScore:cs,
-    total:Math.round(total*10)/10,phone:p.tel||'',lng:lng,lat:lat,distance:dst};
+    total:Math.round(total*10)/10,phone:tel||'',lng:lng,lat:lat,distance:dst};
 }
 
-// ========== 搜索 ==========
-var isSearching=false,allResults=[],ps=null;
+// ========== 搜索 (REST API) ==========
+var isSearching=false,allResults=[];
+var WS_KEY='b756c2d47e44c7a36768bd8f2d2d7665';  // 高德 Web 服务 Key
 
 document.getElementById('cfGo').onclick=function(){
   if(isSearching)return;
@@ -243,31 +260,48 @@ document.getElementById('cfGo').onclick=function(){
   document.getElementById('cfTitle').textContent='结果 0 家';
   document.getElementById('cfProgWrap').style.display='block';
   document.getElementById('cfProgFill').style.width='0%';
-  document.getElementById('cfProgText').textContent='搜索 '+KEYS.length+' 个关键词...';
+  document.getElementById('cfProgText').textContent='REST API 搜索...';
   document.getElementById('cfOut').disabled=true;
 
-  var all=[],done=0,seen={};
+  var all=[],seen={},kwIdx=0,page=1,totalPages=0;
+  var MAX_PAGES=8,PAGE_SIZE=25,DELAY=300;
 
-  function next(i){
-    if(i>=KEYS.length){finish(all);return;}
-    msg.textContent='['+(i+1)+'/'+KEYS.length+'] '+KEYS[i];
+  function fetchNext(){
+    if(kwIdx>=KEYS.length){finish(all);return;}
+    var kw=KEYS[kwIdx];
+    var url='https://restapi.amap.com/v3/place/around?key='+WS_KEY+
+      '&location='+center.lng.toFixed(6)+','+center.lat.toFixed(6)+
+      '&radius='+radius+'&keywords='+encodeURIComponent(kw)+
+      '&offset='+PAGE_SIZE+'&page='+page+'&extensions=all';
 
-    if(!ps)ps=new AMapInstance.PlaceSearch({pageSize:25,extensions:'all'});
-    ps.searchNearBy(KEYS[i],[center.lng,center.lat],radius,function(s,r){
-      if(s==='complete'&&r&&r.pois){
-        for(var j=0;j<r.pois.length;j++){
-          var k=r.pois[j].name+'|'+(r.pois[j].address||'');
-          if(!seen[k]){seen[k]=true;all.push(r.pois[j]);}
+    fetch(url).then(function(r){return r.json();}).then(function(data){
+      if(data.status==='1'&&data.pois){
+        data.pois.forEach(function(poi){
+          var k=poi.name+'|'+(poi.address||'');
+          if(!seen[k]){seen[k]=true;all.push(poi);}
+        });
+        if(page===1){
+          var cnt=parseInt(data.count)||0;
+          totalPages=Math.min(Math.ceil(cnt/PAGE_SIZE),MAX_PAGES);
         }
       }
-      done++;
-      var pct=Math.round(done/KEYS.length*100);
+      page++;
+      if(page>totalPages){kwIdx++;page=1;totalPages=0;}
+
+      var pct=Math.round(kwIdx/KEYS.length*100);
       document.getElementById('cfProgFill').style.width=pct+'%';
-      document.getElementById('cfProgText').textContent=done+'/'+KEYS.length+' 已找 '+all.length+' 家';
-      setTimeout(function(){next(i+1)},250);
+      document.getElementById('cfProgText').textContent=kwIdx+'/'+KEYS.length+' 关键词 '+all.length+'家';
+      msg.textContent='['+(kwIdx+1)+'/'+KEYS.length+'] '+kw+' p'+(page-1)+' ['+all.length+'家]';
+
+      setTimeout(fetchNext,DELAY);
+    }).catch(function(err){
+      console.log('REST err:',err.message);
+      page++;
+      if(page>totalPages){kwIdx++;page=1;totalPages=0;}
+      setTimeout(fetchNext,DELAY);
     });
   }
-  next(0);
+  fetchNext();
 };
 
 function finish(all){
