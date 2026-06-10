@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>区域搜公司 — 安装书签</title>
+<style>
+body{font-family:"Microsoft YaHei",sans-serif;max-width:660px;margin:40px auto;padding:20px;color:#333;background:#f5f5f5}
+h1{color:#1677ff;text-align:center}
+.card{background:#fff;border-radius:10px;padding:24px;margin:20px 0;box-shadow:0 2px 12px rgba(0,0,0,.1)}
+.bm{display:inline-block;padding:18px 48px;margin:16px 0;background:#1677ff;color:#fff;font-size:22px;font-weight:bold;text-decoration:none;border-radius:10px;cursor:grab;box-shadow:0 4px 20px rgba(22,119,255,.45);transition:.2s;user-select:none}
+.bm:hover{transform:translateY(-3px);box-shadow:0 6px 28px rgba(22,119,255,.6)}
+ol li{margin:12px 0;font-size:16px;line-height:1.8}
+.tip{color:#999;font-size:14px;margin-top:8px}
+.n{display:inline-block;width:26px;height:26px;background:#1677ff;color:#fff;border-radius:50%;text-align:center;line-height:26px;margin-right:8px;font-size:14px}
+.copy-area{background:#f9f9f9;border:1px dashed #d9d9d9;padding:16px;border-radius:8px;margin:8px 0;font-size:12px;color:#666;word-break:break-all;max-height:120px;overflow-y:auto;display:none;user-select:all}
+.btn{display:inline-block;padding:10px 20px;margin:8px;background:#1677ff;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-weight:bold}
+.btn2{background:#52c41a}
+</style>
+</head>
+<body>
+
+<h1>区域搜公司 - 高德增强</h1>
+
+<div class="card" style="text-align:center">
+  <h2>方法一：拖拽安装（推荐）</h2>
+  <p>把蓝色按钮直接<strong>拖到收藏栏</strong></p>
+  <a class="bm" id="bookmarkletLink" href="javascript:void(0)">区域搜公司</a>
+  <p class="tip">收藏栏没显示？按 <code>Ctrl+Shift+B</code></p>
+</div>
+
+<div class="card">
+  <h2>方法二：手动复制</h2>
+  <p>如果拖拽没反应，手动创建书签：</p>
+  <ol>
+    <li>点下面按钮 <strong>复制代码</strong></li>
+    <li>在收藏栏右键 → <strong>添加网页</strong></li>
+    <li>名称填「区域搜公司」，<strong>网址粘贴</strong>刚复制的内容</li>
+    <li>保存</li>
+  </ol>
+  <button class="btn" onclick="copyCode()">复制书签代码</button>
+  <div class="copy-area" id="copyArea"></div>
+  <p class="tip" id="copyOk" style="color:#52c41a;display:none">[OK] 已复制到剪贴板</p>
+</div>
+
+<div class="card">
+  <h2>使用</h2>
+  <ol>
+    <li><span class="n">1</span>打开 <a href="https://www.amap.com" target="_blank">amap.com</a></li>
+    <li><span class="n">2</span>点收藏栏的 <strong>「区域搜公司」</strong></li>
+    <li><span class="n">3</span>地图上出现<strong>蓝色搜索圈</strong></li>
+    <li><span class="n">4</span><strong>拖动地图</strong>移蓝圈，选半径</li>
+    <li><span class="n">5</span>点 <strong>「搜索区域内公司」</strong></li>
+    <li><span class="n">6</span>点 <strong>「导出CSV」</strong>下载</li>
+  </ol>
+</div>
+
+<script>
+// 生成自包含的 bookmarklet（base64内嵌，不依赖服务器）
+var SCRIPT_URL;  // 将在下面生成
+
+(function() {
+  // Minify and base64 the bookmarklet.js
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', 'bookmarklet.js', true);
+  xhr.onload = function() {
+    var code = xhr.responseText
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*/g, '')
+      .replace(/\n\s*/g, ' ')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+
+    // 直接用 URI 编码，浏览器执行 javascript: URL 时会自动解码
+    SCRIPT_URL = 'javascript:' + encodeURIComponent(code);
+
+    document.getElementById('bookmarkletLink').href = SCRIPT_URL;
+    document.getElementById('copyArea').textContent = SCRIPT_URL;
+
+    console.log('Bookmarklet ready, length:', SCRIPT_URL.length);
+  };
+  xhr.send();
+})();
+
+function copyCode() {
+  var area = document.getElementById('copyArea');
+  area.style.display = 'block';
+  var text = area.textContent;
+
+  // Try clipboard API
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function() {
+      document.getElementById('copyOk').style.display = 'block';
+    });
+  } else {
+    // Fallback: select and copy
+    var sel = window.getSelection();
+    var range = document.createRange();
+    range.selectNodeContents(area);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('copy');
+    document.getElementById('copyOk').style.display = 'block';
+  }
+}
+</script>
+
+</body>
+</html>

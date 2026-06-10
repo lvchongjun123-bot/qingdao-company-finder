@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>高德地图圈选工具 - 小书签</title>
+<style>
+  body { font-family:"Microsoft YaHei",sans-serif; max-width:700px; margin:40px auto; padding:20px; line-height:2; }
+  .bookmarklet { display:inline-block; padding:14px 28px; background:#0091ff; color:#fff;
+    font-size:18px; font-weight:bold; border-radius:8px; text-decoration:none; cursor:move; }
+  .bookmarklet:hover { background:#0073cc; }
+  .step { background:#f5f5f5; padding:12px 20px; border-radius:6px; margin:10px 0; }
+  code { background:#eee; padding:2px 6px; border-radius:3px; }
+  .tip { color:#e67e22; font-weight:bold; }
+</style>
+</head>
+<body>
+
+<h2>如何使用</h2>
+
+<div class="step">
+  <strong>第1步：</strong>把下面这个按钮 <strong>拖到你浏览器的书签栏</strong><br><br>
+  <a class="bookmarklet" href="javascript:(function(){var s=document.createElement('script');s.src='https://webapi.amap.com/maps?v=2.0&key=a3a3169723ae7b4ad9cafae574444664&plugin=AMap.MouseTool';s.onload=function(){var t=document.createElement('div');t.innerHTML='<div style=position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:99999;display:flex;gap:8px;><button id=btnStart style=padding:10px 20px;border:none;border-radius:6px;background:#4ecdc4;color:#fff;font-size:15px;font-weight:bold;cursor:pointer;>圈选区域</button><button id=btnExport style=padding:10px 20px;border:none;border-radius:6px;background:#ffe66d;color:#333;font-size:15px;font-weight:bold;cursor:pointer;disabled>导出区域</button><button id=btnClear style=padding:10px 20px;border:none;border-radius:6px;background:#666;color:#fff;font-size:15px;cursor:pointer;>清除</button></div>';document.body.appendChild(t);var mt=null,pg=null,path=[],map=null;var maps=document.querySelectorAll('[id*=map]');if(maps.length>0){var mdiv=maps[0];mdiv.style.height='calc(100vh - 50px)';map=new AMap.Map(mdiv,{zoom:13,center:[120.13,36.02]})}else{var d=document.createElement('div');d.id='amap_inject';d.style='position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99990';document.body.appendChild(d);map=new AMap.Map('amap_inject',{zoom:13,center:[120.13,36.02]})}AMap.plugin('AMap.MouseTool',function(){mt=new AMap.MouseTool(map)});document.getElementById('btnStart').onclick=function(){if(!mt)return;if(pg)map.remove(pg);path=[];mt.polygon();this.textContent='绘制中...点地图开始';mt.on('draw',function(e){pg=e.obj;map.add(pg);path=pg.getPath().map(function(p){return[p.lng,p.lat]});document.getElementById('btnExport').disabled=false;document.getElementById('btnStart').textContent='重新圈选'})};document.getElementById('btnExport').onclick=function(){if(path.length<3){alert('请先圈选至少3个顶点的区域');return}var data={name:'高德地图圈选区域',created:new Date().toISOString(),vertices:path,polygon:path.map(function(p){return p.join(',')}).join('|')};var b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='area.json';a.click();URL.revokeObjectURL(u);alert('area.json 已下载！请放到 company_finder.py 同目录')};document.getElementById('btnClear').onclick=function(){if(pg){map.remove(pg);pg=null}path=[];document.getElementById('btnExport').disabled=true;document.getElementById('btnStart').textContent='圈选区域'}};document.head.appendChild(s)})();">高德圈选工具</a>
+</div>
+
+<div class="step">
+  <strong>第2步：</strong>打开 <a href="https://www.amap.com" target="_blank">amap.com（高德地图官网）</a>
+</div>
+
+<div class="step">
+  <strong>第3步：</strong>在高德地图页面上，点书签栏里的 <strong>"高德圈选工具"</strong>
+</div>
+
+<div class="step">
+  <strong>第4步：</strong>地图上会出现工具栏，点 <strong>"圈选区域"</strong>，在黄岛区画多边形
+</div>
+
+<div class="step">
+  <strong>第5步：</strong>画完点 <strong>"导出区域"</strong>，下载 area.json
+</div>
+
+<div class="step">
+  <strong>第6步：</strong>把 area.json 放到 <code>company_finder.py</code> 同目录，运行 <code>python company_finder.py --deep</code>
+</div>
+
+<h3 class="tip">不会拖按钮？</h3>
+<p>复制以下代码，在高德地图页面按 <code>F12</code> 打开控制台(Console)，粘贴回车：</p>
+<textarea rows="8" style="width:100%;font-family:monospace;font-size:12px;" readonly>
+(function(){
+var s=document.createElement('script');
+s.src='https://webapi.amap.com/maps?v=2.0&key=a3a3169723ae7b4ad9cafae574444664&plugin=AMap.MouseTool';
+s.onload=function(){
+var t=document.createElement('div');
+t.innerHTML='<div style=position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:99999;display:flex;gap:8px;><button id=btnStart style=padding:10px 20px;border:none;border-radius:6px;background:#4ecdc4;color:#fff;font-size:15px;font-weight:bold;cursor:pointer;>圈选区域</button><button id=btnExport style=padding:10px 20px;border:none;border-radius:6px;background:#ffe66d;color:#333;font-size:15px;font-weight:bold;cursor:pointer;disabled>导出区域</button><button id=btnClear style=padding:10px 20px;border:none;border-radius:6px;background:#666;color:#fff;font-size:15px;cursor:pointer;>清除</button></div>';
+document.body.appendChild(t);
+var mt=null,pg=null,path=[];
+var mdiv=document.createElement('div');
+mdiv.id='amap_overlay';
+mdiv.style='position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99990;background:#fff;';
+document.body.appendChild(mdiv);
+var map=new AMap.Map('amap_overlay',{zoom:13,center:[120.13,36.02]});
+AMap.plugin('AMap.MouseTool',function(){mt=new AMap.MouseTool(map)});
+document.getElementById('btnStart').onclick=function(){
+if(!mt)return;if(pg)map.remove(pg);path=[];mt.polygon();
+this.textContent='绘制中...';
+mt.on('draw',function(e){pg=e.obj;map.add(pg);
+path=pg.getPath().map(function(p){return[p.lng,p.lat]});
+document.getElementById('btnExport').disabled=false;
+document.getElementById('btnStart').textContent='重新圈选'})};
+document.getElementById('btnExport').onclick=function(){
+if(path.length<3){alert('请先圈选至少3个顶点的区域');return}
+var data={name:'黄岛区',created:new Date().toISOString(),vertices:path,polygon:path.map(function(p){return p.join(',')}).join('|')};
+var b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='area.json';a.click();URL.revokeObjectURL(u);alert('area.json 已下载！')};
+document.getElementById('btnClear').onclick=function(){if(pg){map.remove(pg);pg=null}path=[];document.getElementById('btnExport').disabled=true;document.getElementById('btnStart').textContent='圈选区域'}};
+document.head.appendChild(s)})();
+</textarea>
+
+</body>
+</html>
