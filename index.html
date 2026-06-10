@@ -99,6 +99,13 @@ body{font-family:"Microsoft YaHei",sans-serif;overflow:hidden;background:#fff}
 .links{margin-top:3px;font-size:10px;display:flex;gap:8px;flex-wrap:wrap}
 .links a{text-decoration:none;font-weight:bold}
 .links a.boss{color:#00c2a8}.links a.zl{color:#1677ff}.links a.wuyi{color:#ff6600}.links a.web{color:#8c8c8c}
+
+/* ===== 分页 ===== */
+.pager{display:flex;gap:4px;justify-content:center;align-items:center;padding:8px 4px;border-top:1px solid #f0f0f0;flex-shrink:0}
+.pager button{padding:4px 10px;border:1px solid #d9d9d9;border-radius:4px;background:#fff;cursor:pointer;font-size:11px;color:#333;min-width:28px}
+.pager button.on{background:#1677ff;color:#fff;border-color:#1677ff}
+.pager button:disabled{color:#ccc;cursor:not-allowed;background:#f5f5f5}
+.pager .pg-info{font-size:11px;color:#999;margin:0 4px}
 </style>
 </head>
 <body>
@@ -159,6 +166,7 @@ body{font-family:"Microsoft YaHei",sans-serif;overflow:hidden;background:#fff}
     <div class="prog" id="progWrap" style="display:none"><div id="progFill"></div></div>
     <div class="pt" id="progText"></div>
     <div id="resList"></div>
+    <div id="pagination" style="display:none"></div>
   </div>
 </div>
 
@@ -426,6 +434,8 @@ map.on('rightclick', function(e) {
 var isSearching = false, allResults = [], currentSort = 'total';
 var markers = [];
 var showMarkers = true;
+var currentPageNum = 1;
+var PAGE_SIZE_DISPLAY = 50;
 
 function getSelectedDistricts() {
   var cbs = document.querySelectorAll('#distDrop input[type=checkbox]:checked');
@@ -787,8 +797,8 @@ document.getElementById('btnGo').onclick = function() {
       scored.sort(function(a, b) { return b.total - a.total; });
       allResults = scored;
       try {
-        renderList(scored);
-        if (showMarkers) { addMarkers(scored); }
+        currentPageNum = 1;
+        renderPage(1);
       } catch(e) {
         console.log('render error:', e.message);
         document.getElementById('resList').innerHTML = '<div style=\"padding:20px;color:red\">渲染错误: ' + e.message + '</div>';
@@ -958,8 +968,8 @@ function sortResults(by) {
   else if (by === 'distanceScore') sorted.sort(function(a, b) { return b.distanceScore - a.distanceScore; });
   else if (by === 'scaleScore') sorted.sort(function(a, b) { return b.scaleScore - a.scaleScore; });
   else if (by === 'welfareScore') sorted.sort(function(a, b) { return b.welfareScore - a.welfareScore; });
-  renderList(sorted);
-  if (showMarkers) { addMarkers(sorted); } else { clearMarkers(); }
+  currentPageNum = 1;
+  renderPage(1);
 }
 
 // ============================================================
@@ -1010,7 +1020,8 @@ function addMarkers(results) {
 // ============================================================
 //  结果列表
 // ============================================================
-function renderList(results) {
+function renderList(results, startIndex) {
+  if (typeof startIndex === 'undefined') startIndex = 0;
   if (!results.length) {
     document.getElementById('resList').innerHTML =
       '<div style="text-align:center;padding:30px;color:#999;line-height:2">当前范围内未找到公司<br>建议: 换区域 / 扩大视野 / 检查网络</div>';
@@ -1025,7 +1036,7 @@ function renderList(results) {
     var natCls = 'nat-' + r.nature;
     var rid = 'row' + i;
     h += '<div class="rrow ' + cls + '" id="' + rid + '" onclick="toggleDetail(\'' + rid + '\')">' +
-      '<div class="rt"><span class="rn">' + (i + 1) + '. ' + esc(r.name) +
+      '<div class="rt"><span class="rn">' + (startIndex + i + 1) + '. ' + esc(r.name) +
       '<span class="rnatur ' + natCls + '">' + r.nature + '</span></span>' +
       '<span class="rs ' + cls + '">' + r.total + '</span></div>' +
       '<div class="rm"><span>企业性质' + r.natureScore + '</span>' +
@@ -1066,6 +1077,57 @@ function zlLink(name) {
 }
 function wuyiLink(name) {
   return 'https://we.51job.com/pc/search?keyword=' + encodeURIComponent(name) + '&area=370200';
+}
+
+// ============================================================
+//  分页
+// ============================================================
+function getCurrentPage() {
+  var start = (currentPageNum - 1) * PAGE_SIZE_DISPLAY;
+  return allResults.slice(start, start + PAGE_SIZE_DISPLAY);
+}
+
+function renderPage(pageNum) {
+  var totalPages = Math.ceil(allResults.length / PAGE_SIZE_DISPLAY);
+  if (totalPages < 1) totalPages = 1;
+  if (pageNum > totalPages) pageNum = totalPages;
+  if (pageNum < 1) pageNum = 1;
+  currentPageNum = pageNum;
+
+  var pageData = getCurrentPage();
+  renderList(pageData, (pageNum - 1) * PAGE_SIZE_DISPLAY);
+  renderPagination();
+  if (showMarkers) { addMarkers(getCurrentPage()); } else { clearMarkers(); }
+}
+
+function renderPagination() {
+  var totalPages = Math.ceil(allResults.length / PAGE_SIZE_DISPLAY);
+  var el = document.getElementById('pagination');
+  if (totalPages <= 1) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.className = 'pager';
+
+  var html = '';
+  html += '<button ' + (currentPageNum <= 1 ? 'disabled' : 'onclick="renderPage(' + (currentPageNum - 1) + ')"') + '>&lt;</button>';
+
+  var startP = Math.max(1, currentPageNum - 3);
+  var endP = Math.min(totalPages, currentPageNum + 3);
+  if (startP > 1) {
+    html += '<button onclick="renderPage(1)">1</button>';
+    if (startP > 2) html += '<span class="pg-info">...</span>';
+  }
+  for (var p = startP; p <= endP; p++) {
+    html += '<button class="' + (p === currentPageNum ? 'on' : '') + '" onclick="renderPage(' + p + ')">' + p + '</button>';
+  }
+  if (endP < totalPages) {
+    if (endP < totalPages - 1) html += '<span class="pg-info">...</span>';
+    html += '<button onclick="renderPage(' + totalPages + ')">' + totalPages + '</button>';
+  }
+
+  html += '<button ' + (currentPageNum >= totalPages ? 'disabled' : 'onclick="renderPage(' + (currentPageNum + 1) + ')"') + '>&gt;</button>';
+  html += '<span class="pg-info">共 ' + allResults.length + ' 条</span>';
+
+  el.innerHTML = html;
 }
 
 // ============================================================
