@@ -895,12 +895,14 @@ document.getElementById('btnGo').onclick = function() {
     });
 
     var WS_KEY = 'b756c2d47e44c7a36768bd8f2d2d7665';
-    var PAGE_SIZE = 25, MAX_PAGES = 20, FETCH_DELAY = 300;
+    var PAGE_SIZE = 25, MAX_PAGES = 25, FETCH_DELAY = 300;
     var all = [], seen = {};
     var planIdx = 0, currentPage = 1, pagesNeeded = 1;
     var totalPagesEstimate = 0, pagesFetched = 0;
     var finished = false;
     var KEYWORDS = encodeURIComponent('公司|工厂|企业|科技|工程|制造|商贸|机械|物流');
+	    var OVERFLOW_THRESHOLD = 800;
+	    var MAX_SUBDIVIDE = 2;
 
     document.getElementById('tip').textContent = 'REST API 网格搜索 ' + plans.length + ' 点...';
     document.getElementById('progText').textContent = '查询中...';
@@ -932,8 +934,33 @@ document.getElementById('btnGo').onclick = function() {
           var count = parseInt(data.count) || 0;
           pagesNeeded = Math.min(Math.ceil(count / PAGE_SIZE), MAX_PAGES);
           totalPagesEstimate += pagesNeeded;
+
+          // 四叉树溢出检测：结果数接近 API 上限 -> 裂变成 2x2 子网格
+          var subLv = plan.level || 0;
+          if (count >= OVERFLOW_THRESHOLD && subLv < MAX_SUBDIVIDE) {
+            var nxtLv = subLv + 1;
+            var subSpacing = 0.055 / nxtLv;
+            var subRadius = Math.round(plan.radius / 2);
+            var subOff = [-subSpacing, subSpacing];
+            var added = 0;
+            for (var si = 0; si < 2; si++) {
+              for (var sj = 0; sj < 2; sj++) {
+                plans.push({
+                  label: plan.label + '.' + nxtLv + '.' + (si*2+sj+1),
+                  lng: plan.lng + subOff[si],
+                  lat: plan.lat + subOff[sj],
+                  radius: subRadius,
+                  level: nxtLv
+                });
+                added++;
+              }
+            }
+            totalPagesEstimate += added;
+            console.log('QuadSplit:', plan.label, 'count=' + count,
+              '-> ' + added + ' sub-plans r=' + subRadius + 'm lv=' + nxtLv);
+          }
         }
-        var pct = totalPagesEstimate > 0 ? Math.round(pagesFetched / totalPagesEstimate * 100) : 0;
+        var pct = totalPagesEstimate > 0 ? Math.round(Math.min(100, pagesFetched / Math.max(totalPagesEstimate, pagesFetched) * 100)) : 0;
         document.getElementById('progFill').style.width = pct + '%';
         document.getElementById('progText').textContent = pagesFetched + '/' + totalPagesEstimate + ' 页 ' + all.length + '家';
         document.getElementById('tip').textContent = plan.label + ' p' + currentPage + ' ' +
