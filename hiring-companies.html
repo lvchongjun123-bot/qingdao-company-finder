@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>黄岛区 Top 50 公司 · 招聘手动核查工具</title>
+<style>
+:root{
+  --bg:#f7f8fa; --surface:#fff; --surface2:#f1f3f6; --border:#e5e7eb; --border2:#dde0e4;
+  --text:#111827; --text2:#4b5563; --text3:#9ca3af;
+  --accent:#2563eb; --green:#059669; --amber:#d97706; --red:#dc2626;
+  --font:'Inter','-apple-system','SF Pro Display','PingFang SC','Microsoft YaHei',sans-serif;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.04); --shadow-md:0 4px 12px rgba(0,0,0,.06);
+  --radius-sm:6px; --radius:10px; --radius-lg:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
+
+/* Hero */
+.hero{background:linear-gradient(160deg,#0f172a 0%,#1e293b 40%,#1e3a5f 100%);color:#f1f5f9;padding:36px 0 48px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-100px;right:-60px;width:360px;height:360px;background:radial-gradient(circle,rgba(59,130,246,.22) 0%,transparent 70%);border-radius:50%;pointer-events:none}
+.hero::after{content:'';position:absolute;bottom:-80px;left:-40px;width:280px;height:280px;background:radial-gradient(circle,rgba(239,68,68,.1) 0%,transparent 70%);border-radius:50%;pointer-events:none}
+.hero-inner{max-width:1200px;margin:0 auto;padding:0 28px;position:relative;z-index:1}
+.hero h1{font-size:26px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px}
+.hero .sub{font-size:13px;color:#94a3b8}
+
+/* Progress bar */
+.progress-wrap{max-width:1200px;margin:-20px auto 20px;padding:0 28px;position:relative;z-index:2}
+.progress-card{background:var(--surface);border-radius:var(--radius);padding:16px 22px;box-shadow:var(--shadow-md);border:1px solid var(--border);display:flex;align-items:center;gap:18px}
+.progress-bar-outer{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.progress-bar-inner{height:100%;background:var(--accent);border-radius:4px;transition:width .35s ease}
+.progress-stats{display:flex;gap:20px;font-size:13px;color:var(--text2);white-space:nowrap}
+.progress-stats b{font-weight:650;color:var(--text)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--text3)}
+.legend .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.dot.hiring{background:var(--green)} .dot.none{background:var(--red)} .dot.unsure{background:var(--amber)} .dot.pending{background:var(--text3)}
+
+/* Controls */
+.controls{max-width:1200px;margin:0 auto 14px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.controls h2{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.filter-chips{display:flex;gap:7px;flex-wrap:wrap}
+.chip{padding:4px 14px;border-radius:20px;font-size:12px;font-weight:500;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;user-select:none}
+.chip:hover{border-color:#c4c8cf}
+.chip.active{color:#fff;border-color:transparent}
+.chip.active.all{background:var(--accent)}
+.chip.active.hiring{background:var(--green)}
+.chip.active.none{background:var(--text2)}
+.chip.active.unsure{background:var(--amber)}
+.chip.active.pending{background:var(--text3)}
+.btn-export{padding:5px 16px;border-radius:20px;font-size:12px;font-weight:500;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s}
+.btn-export:hover{border-color:var(--accent);color:var(--accent)}
+.btn-reset{padding:5px 12px;border-radius:20px;font-size:11px;border:1.5px solid #fecaca;background:#fff;color:var(--red);cursor:pointer;transition:all .15s}
+.btn-reset:hover{background:var(--red);color:#fff;border-color:var(--red)}
+
+/* Table */
+.main{max-width:1200px;margin:0 auto;padding:0 28px 32px}
+.table-wrap{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);border:1px solid var(--border);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{padding:10px 14px;text-align:left;font-weight:600;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;background:var(--surface2);border-bottom:1px solid var(--border2);white-space:nowrap}
+thead th:first-child{padding-left:18px} thead th:last-child{padding-right:18px}
+tbody td{padding:8px 14px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+tbody td:first-child{padding-left:18px} tbody td:last-child{padding-right:18px}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:#fafcff}
+tbody tr:last-child td{border-bottom:none}
+
+.col-rank{width:38px;text-align:center}.col-score{width:52px;text-align:center}
+.col-nature{width:44px;text-align:center}.col-name{min-width:170px}
+.col-addr{min-width:130px;font-size:11.5px;color:var(--text3)}
+.col-status{width:90px;text-align:center}.col-links{width:260px;text-align:center}
+
+.rank-num{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;border-radius:5px;font-size:11px;font-weight:600;color:var(--text3);background:var(--surface2)}
+tr:nth-child(-n+3) .rank-num{background:#eff6ff;color:var(--accent);font-weight:700}
+.score-val{font-weight:650}.score-val.high{color:var(--green)}.score-val.mid{color:var(--amber)}
+
+/* Status toggle */
+.status-btn{display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border-radius:var(--radius-sm);font-size:11px;font-weight:500;cursor:pointer;border:1.5px solid var(--border);background:var(--surface);color:var(--text3);transition:all .15s;user-select:none}
+.status-btn:hover{transform:translateY(-1px)}
+.status-btn.pending{}
+.status-btn.hiring{background:#ecfdf5;color:var(--green);border-color:#a7f3d0}
+.status-btn.none{background:#fef2f2;color:var(--red);border-color:#fecaca}
+.status-btn.unsure{background:#fffbeb;color:var(--amber);border-color:#fde68a}
+
+/* Link buttons */
+.link-row{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}
+.btn-link{display:inline-flex;align-items:center;gap:2px;padding:4px 9px;border-radius:var(--radius-sm);font-size:11px;font-weight:500;text-decoration:none;border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s;white-space:nowrap}
+.btn-link:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.btn-link.boss:hover{background:#e6f7ff;color:#1890ff;border-color:#91d5ff}
+.btn-link.job51:hover{background:#fff7e6;color:#d97706;border-color:#ffd591}
+.btn-link.zhilian:hover{background:#f0fdf4;color:#059669;border-color:#86efac}
+.btn-link.talent:hover{background:#eff6ff;color:#2563eb;border-color:#bfdbfe}
+.btn-link .icon{font-size:13px}
+
+/* Footer */
+.footer{max-width:1200px;margin:20px auto 40px;padding:0 28px;font-size:12px;color:var(--text3)}
+.footer-inner{background:var(--surface);border-radius:var(--radius);padding:16px 22px;border:1px solid var(--border);display:flex;gap:28px;flex-wrap:wrap}
+.footer-col h4{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+tbody tr{animation:fadeUp .3s ease backwards}
+tbody tr:nth-child(1){animation-delay:0s} tbody tr:nth-child(2){animation-delay:.015s} tbody tr:nth-child(3){animation-delay:.03s} tbody tr:nth-child(4){animation-delay:.045s} tbody tr:nth-child(5){animation-delay:.06s} tbody tr:nth-child(6){animation-delay:.075s} tbody tr:nth-child(7){animation-delay:.09s} tbody tr:nth-child(8){animation-delay:.105s} tbody tr:nth-child(9){animation-delay:.12s} tbody tr:nth-child(10){animation-delay:.135s}
+@media(max-width:900px){.col-addr{display:none}.hero h1{font-size:20px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <h1>黄岛区 Top 50 公司 · 招聘手动核查</h1>
+    <div class="sub">9×9 网格 · 5km 半径 · 6,664 家公司 · 2026-06-14 · 自动化渠道均不可用，需人工逐家确认</div>
+  </div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-card">
+    <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar" style="width:0%"></div></div>
+    <div class="progress-stats">
+      <span>已查 <b id="countChecked">0</b>/50</span>
+      <span style="color:var(--green)">在招 <b id="countHiring">0</b></span>
+      <span style="color:var(--red)">无 <b id="countNone">0</b></span>
+      <span style="color:var(--amber)">不确定 <b id="countUnsure">0</b></span>
+    </div>
+    <div class="legend">
+      <span><span class="dot hiring"></span>在招</span>
+      <span><span class="dot none"></span>无招聘</span>
+      <span><span class="dot unsure"></span>不确定</span>
+      <span><span class="dot pending"></span>未查</span>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <h2>公司列表</h2>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <div class="filter-chips">
+      <button class="chip active all" data-filter="all">全部 50 家</button>
+      <button class="chip pending" data-filter="pending">未查</button>
+      <button class="chip hiring" data-filter="hiring">在招</button>
+      <button class="chip none" data-filter="none">无招聘</button>
+      <button class="chip unsure" data-filter="unsure">不确定</button>
+    </div>
+    <button class="btn-export" onclick="exportResults()" title="复制结果到剪贴板">导出</button>
+    <button class="btn-reset" onclick="resetAll()">清空</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="table-wrap">
+  <table>
+  <thead>
+  <tr>
+    <th class="col-rank">#</th>
+    <th class="col-score">评分</th>
+    <th class="col-nature">性质</th>
+    <th class="col-name">公司名称</th>
+    <th class="col-addr">地址</th>
+    <th class="col-status">状态</th>
+    <th class="col-links">一键搜索</th>
+  </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+  </table>
+  </div>
+</div>
+
+<div class="footer">
+  <div class="footer-inner">
+    <div class="footer-col">
+      <h4>使用说明</h4>
+      <p>逐家点击右侧搜索链接，在新标签页查看各平台是否有该公司招聘信息。判断后点击「未查」切换状态。<br>状态自动保存到浏览器，刷新不丢失。</p>
+    </div>
+    <div class="footer-col">
+      <h4>渠道说明</h4>
+      <p><strong>BOSS</strong> / <strong>51job</strong> / <strong>智联</strong> — 直接搜索链接<br><strong>人才网</strong> — 青岛人才网岗位超市，需在页面搜索框输入公司名后点🔍</p>
+    </div>
+    <div class="footer-col">
+      <h4>自动化结论</h4>
+      <p>BOSS→验证码 · 51job→修复后无结果 · 智联→EdgeOne拦截 · 人才网→加密POST反爬<br>6,664 家公司中真正在招的，只能手工确认。</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+var companies = [
+  {r:1,  n:"青岛润泽智能装备股份有限公司",                s:78.0, t:"股份", a:"灵海路6181号"},
+  {r:2,  n:"青岛大唐安防工程有限公司",                    s:76.6, t:"民营", a:"兰东路483号"},
+  {r:3,  n:"北京领先未来科技集团有限公司(青岛分公司)",       s:75.0, t:"民营", a:"富春江路1523号"},
+  {r:4,  n:"中国移动通信集团山东有限公司青岛开发区分公司",    s:74.6, t:"民营", a:"阿里山路126号"},
+  {r:5,  n:"青岛科路驰电子科技有限公司",                  s:74.0, t:"民营", a:"星海滩路111号和达国际虚拟产业园3号楼"},
+  {r:6,  n:"山东招金膜天股份有限公司青岛办事处",            s:74.0, t:"股份", a:"东岳东路458号"},
+  {r:7,  n:"青岛华瑞纺织机械制造有限公司",                 s:72.0, t:"民营", a:"滨海大道2699号海信灵山国际B-606"},
+  {r:8,  n:"青岛杰之森建筑装饰工程有限公司",               s:72.0, t:"民营", a:"湾东路806号"},
+  {r:9,  n:"大湾机械化工工程有限公司",                    s:72.0, t:"民营", a:"昆泉·天籁村西南1门北80米"},
+  {r:10, n:"青岛乾顺祥智能化工程有限公司",                 s:72.0, t:"民营", a:"富春江路1988号山东机器人产业园8号楼"},
+  {r:11, n:"徐州单湾建筑工程有限公司青岛分公司",            s:71.0, t:"民营", a:"创科园北区24栋"},
+  {r:12, n:"中视未来(山东)教育管理有限公司",               s:70.6, t:"民营", a:"西海岸新区中国广电青岛5G高新视频实验园区B1-508"},
+  {r:13, n:"青岛城市星装饰工程有限公司",                  s:70.6, t:"民营", a:"建邦东区7栋106"},
+  {r:14, n:"堂颂装饰工程有限公司",                       s:70.6, t:"民营", a:"东岳东路东方华庭商郡420-3"},
+  {r:15, n:"青岛伍悦建筑装饰工程有限公司",                 s:70.0, t:"民营", a:"星海滩路111号9号楼201"},
+  {r:16, n:"青岛三佳机电有限公司",                       s:70.0, t:"民营", a:"灵山卫办事处开山口社区"},
+  {r:17, n:"青岛犇悦信息网络科技有限公司",                 s:70.0, t:"民营", a:"湾东路806号爱客汇上三楼"},
+  {r:18, n:"青岛土木建工集团混凝土工程有限公司",            s:70.0, t:"民营", a:"开发区昆仑山路656号"},
+  {r:19, n:"青岛中加特电气股份有限公司(寨子山路)",          s:69.0, t:"股份", a:"寨子山路1267号"},
+  {r:20, n:"泰诺集团",                                  s:69.0, t:"民营", a:"辛安街道办事处六盘山路8号"},
+  {r:21, n:"青岛优派普环保科技股份有限公司",               s:69.0, t:"股份", a:"泺河路89号"},
+  {r:22, n:"山东堃宁工程集团有限公司",                    s:69.0, t:"民营", a:"荣德海岸1号"},
+  {r:23, n:"中国石油化工集团有限公司工程定额管理站",         s:69.0, t:"民营", a:"长江中路3号鸿润广场20层"},
+  {r:24, n:"山东省建筑工程质量检验检测中心有限公司黄岛分公司", s:69.0, t:"民营", a:"黄河东路81号"},
+  {r:25, n:"一秒装饰工程设计有限公司",                    s:68.6, t:"民营", a:"滨海大道灵山国际A座4层"},
+  {r:26, n:"青岛君伟信达建设装饰工程有限公司",              s:68.6, t:"民营", a:"金贝壳路218-1号"},
+  {r:27, n:"青岛弘瑞泽化工科技有限公司",                  s:68.0, t:"民营", a:"西海岸新区灵山国际B座"},
+  {r:28, n:"山东煜彩建设工程有限公司",                    s:68.0, t:"民营", a:"滨海大道2999号海信海外总部基地3号楼1702室"},
+  {r:29, n:"聪学(青岛)教育科技有限公司",                  s:68.0, t:"民营", a:"滨海大道2789号国合中心五楼501室"},
+  {r:30, n:"青岛吉宗建设工程有限公司",                    s:68.0, t:"民营", a:"隐珠街道办事处九龙社区29号楼"},
+  {r:31, n:"青岛吉禾星建筑工程有限公司",                  s:68.0, t:"民营", a:"山子西西侧"},
+  {r:32, n:"东晖集团",                                  s:68.0, t:"民营", a:"东岳东路500号"},
+  {r:33, n:"青岛美隆砂浆科技有限公司",                    s:68.0, t:"民营", a:"昆仑山南路697号"},
+  {r:34, n:"青岛广泰成自动化科技有限公司",                 s:68.0, t:"民营", a:"富春江路1988号"},
+  {r:35, n:"青岛安博斯环保科技有限公司",                  s:68.0, t:"民营", a:"昆仑山南路695号"},
+  {r:36, n:"青岛华瑞汽车零部件股份有限公司青岛分公司",       s:68.0, t:"股份", a:"红石崖街道富源工业园茂山路868号"},
+  {r:37, n:"青岛贝尔生物科技有限公司",                    s:68.0, t:"民营", a:"灵山卫街道东港路梦时代广场18号楼"},
+  {r:38, n:"青岛滨海建设集团有限公司",                    s:68.0, t:"民营", a:"漓江西路987号滨海大厦16-17层"},
+  {r:39, n:"海河教育集团",                               s:68.0, t:"民营", a:"滨海大厦"},
+  {r:40, n:"青岛万德集团股份有限公司",                    s:67.0, t:"股份", a:"华宁路360号"},
+  {r:41, n:"青岛诺凯达机械制造有限公司",                  s:67.0, t:"民营", a:"隐珠山路1157号"},
+  {r:42, n:"青岛新博朗电子科技有限公司",                  s:67.0, t:"民营", a:"朝阳山路2507号2-5"},
+  {r:43, n:"青岛卡德伟尔机械制造有限公司",                 s:67.0, t:"民营", a:"背儿山路1338号"},
+  {r:44, n:"青岛海德盛机械制造有限公司",                  s:67.0, t:"民营", a:"背儿山路1398号"},
+  {r:45, n:"三花锦利丰股份有限公司",                      s:67.0, t:"股份", a:"洞庭山路40号"},
+  {r:46, n:"屿筑空间设计有限公司",                        s:66.6, t:"民营", a:"维也纳酒店(东方影都星光岛店)附近"},
+  {r:47, n:"方塘.上居装饰设计有限公司",                   s:66.6, t:"民营", a:"灵山卫星海湾路与金鹰路交叉口17777号"},
+  {r:48, n:"青岛万春机械股份有限公司",                    s:66.0, t:"股份", a:"山东省"},
+  {r:49, n:"青岛天一集团红旗电机有限公司",                 s:66.0, t:"民营", a:"世纪大道1588号"},
+  {r:50, n:"青岛山海瑶台装饰工程有限公司",                 s:66.0, t:"民营", a:"滨海大道与华山西路交叉口北100米"}
+];
+
+// ===== STATE =====
+var STORAGE_KEY = 'huangdao_job_check';
+var state = {};
+try {
+  state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+} catch(e) { state = {}; }
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  updateProgress();
+}
+
+function getStatus(name) { return state[name] || 'pending'; }
+function setStatus(name, s) {
+  if (s === 'pending') delete state[name];
+  else state[name] = s;
+  saveState();
+  renderTable(currentFilter);
+}
+
+// ===== RENDER =====
+var currentFilter = 'all';
+
+function renderTable(filter) {
+  currentFilter = filter;
+  var tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+
+  companies.forEach(function(c) {
+    var st = getStatus(c.n);
+    if (filter !== 'all' && st !== filter) return;
+
+    var enc = encodeURIComponent(c.n);
+    var scoreClass = c.s >= 74 ? 'high' : (c.s >= 68 ? 'mid' : '');
+
+    // Status button
+    var statusLabels = { pending: '未查', hiring: '在招', none: '无招聘', unsure: '不确定' };
+    var stLabel = statusLabels[st];
+
+    // Search links
+    var links =
+      '<a class="btn-link boss" href="https://www.zhipin.com/web/geek/job?query=' + enc + '&city=101120200" target="_blank"><span class="icon">💼</span> BOSS</a>' +
+      '<a class="btn-link job51" href="https://we.51job.com/pc/search?keyword=' + enc + '&area=370200" target="_blank"><span class="icon">📋</span> 51job</a>' +
+      '<a class="btn-link zhilian" href="https://www.zhaopin.com/sou/?kw=' + enc + '&city=370200" target="_blank"><span class="icon">🔍</span> 智联</a>' +
+      '<a class="btn-link talent" href="https://fw.rc.qingdao.gov.cn/qdzhrcww/work/f60050102/showGw.action" target="_blank"><span class="icon">🏛</span> 人才网</a>';
+
+    var tr = document.createElement('tr');
+    tr.setAttribute('data-status', st);
+    tr.innerHTML =
+      '<td class="col-rank"><span class="rank-num">' + c.r + '</span></td>' +
+      '<td class="col-score"><span class="score-val ' + scoreClass + '">' + c.s.toFixed(1) + '</span></td>' +
+      '<td class="col-nature">' + c.t + '</td>' +
+      '<td class="col-name">' + c.n + '</td>' +
+      '<td class="col-addr">' + c.a + '</td>' +
+      '<td class="col-status"><span class="status-btn ' + st + '" data-name="' + c.n.replace(/"/g, '&quot;') + '">' + stLabel + '</span></td>' +
+      '<td class="col-links"><div class="link-row">' + links + '</div></td>';
+    tbody.appendChild(tr);
+  });
+
+  // Bind status button clicks
+  tbody.querySelectorAll('.status-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var name = this.dataset.name;
+      var cur = getStatus(name);
+      var next = { pending: 'hiring', hiring: 'none', none: 'unsure', unsure: 'pending' };
+      setStatus(name, next[cur]);
+    });
+  });
+
+  updateProgress();
+}
+
+function updateProgress() {
+  var counts = { hiring: 0, none: 0, unsure: 0, pending: 0 };
+  companies.forEach(function(c) { counts[getStatus(c.n)]++; });
+  var checked = 50 - counts.pending;
+
+  document.getElementById('progressBar').style.width = (checked / 50 * 100) + '%';
+  document.getElementById('countChecked').textContent = checked;
+  document.getElementById('countHiring').textContent = counts.hiring;
+  document.getElementById('countNone').textContent = counts.none;
+  document.getElementById('countUnsure').textContent = counts.unsure;
+}
+
+// ===== FILTERS =====
+document.querySelectorAll('.filter-chips .chip').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.filter-chips .chip').forEach(function(b) { b.classList.remove('active'); });
+    this.classList.add('active');
+    renderTable(this.dataset.filter);
+  });
+});
+
+// ===== EXPORT =====
+function exportResults() {
+  var lines = ['黄岛区 Top 50 公司招聘核查结果', '================================', ''];
+  var groups = { hiring: [], none: [], unsure: [], pending: [] };
+  companies.forEach(function(c) {
+    groups[getStatus(c.n)].push(c);
+  });
+
+  lines.push('在招 (' + groups.hiring.length + ' 家):');
+  groups.hiring.forEach(function(c) { lines.push('  ' + c.r + '. ' + c.n + ' (' + c.s + '分) ' + c.a); });
+  lines.push('');
+  lines.push('无招聘 (' + groups.none.length + ' 家):');
+  groups.none.forEach(function(c) { lines.push('  ' + c.r + '. ' + c.n); });
+  lines.push('');
+  lines.push('不确定 (' + groups.unsure.length + ' 家):');
+  groups.unsure.forEach(function(c) { lines.push('  ' + c.r + '. ' + c.n); });
+  lines.push('');
+  lines.push('未查 (' + groups.pending.length + ' 家)');
+
+  var text = lines.join('\n');
+  navigator.clipboard.writeText(text).then(function() {
+    var btn = document.querySelector('.btn-export');
+    var orig = btn.textContent;
+    btn.textContent = '已复制!';
+    btn.style.color = 'var(--green)';
+    btn.style.borderColor = 'var(--green)';
+    setTimeout(function() { btn.textContent = orig; btn.style.color = ''; btn.style.borderColor = ''; }, 1500);
+  });
+}
+
+function resetAll() {
+  if (confirm('确定要清空所有核查标记吗？此操作不可恢复。')) {
+    state = {};
+    saveState();
+    renderTable('all');
+    document.querySelectorAll('.filter-chips .chip').forEach(function(b) { b.classList.remove('active'); });
+    document.querySelector('.chip.all').classList.add('active');
+  }
+}
+
+// ===== INIT =====
+renderTable('all');
+</script>
+
+</body>
+</html>

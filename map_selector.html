@@ -7,129 +7,160 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%231677ff'/><path d='M32 12 C22 12 14 20 14 30 C14 42 32 56 32 56 C32 56 50 42 50 30 C50 20 42 12 32 12 Z M32 36 C28.7 36 26 33.3 26 30 C26 26.7 28.7 24 32 24 C35.3 24 38 26.7 38 30 C38 33.3 35.3 36 32 36 Z' fill='white'/><rect x='20' y='48' width='24' height='4' rx='2' fill='white' opacity='0.8'/></svg>">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:"Microsoft YaHei",sans-serif;overflow:hidden;background:#fff}
+:root{
+  --c-primary:#1677ff; --c-green:#52c41a; --c-amber:#fa8c16; --c-red:#ff4d4f;
+  --c-bg:#f0f2f5; --c-surface:rgba(255,255,255,.88); --c-border:#e8e8e8;
+  --c-text:#1a1a2e; --c-text2:#666; --c-text3:#999;
+  --r-sm:6px; --r-md:10px; --r-lg:14px;
+  --shadow-panel:0 8px 32px rgba(0,0,0,.08); --shadow-card:0 2px 8px rgba(0,0,0,.04);
+  --font:'-apple-system','Microsoft YaHei',sans-serif;
+  --transition:.2s ease;
+}
+body{font-family:var(--font);overflow:hidden;background:var(--c-bg)}
 #map{width:100vw;height:100vh}
 
-/* ===== 顶栏 ===== */
-#bar{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:200;
-  background:rgba(255,255,255,.97);border-radius:10px;
-  box-shadow:0 2px 16px rgba(0,0,0,.12);font-size:12px}
-#bar .r1,#bar .r2{display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:center}
-#bar .r1{padding:8px 10px 6px}
-#bar .r2{padding:6px 10px 8px;background:#fafafa;border-top:1px solid #f0f0f0}
-#bar button{padding:5px 10px;border:none;border-radius:5px;font-size:11px;
-  cursor:pointer;font-weight:bold;white-space:nowrap;transition:.15s}
-#bar button:hover{opacity:.85;transform:translateY(-1px)}
-.btn-mode{background:#fff;color:#555;border:1.5px solid #d9d9d9!important}
-.btn-mode.on{background:#1677ff;color:#fff;border-color:#1677ff!important}
-.btn-dist{background:#fff;color:#555;border:1.5px solid #d9d9d9!important;position:relative;font-size:11px!important}
-.btn-dist.on{background:#722ed1;color:#fff;border-color:#722ed1!important}
-.btn-go{background:#1677ff;color:#fff;font-size:14px!important;padding:7px 20px!important;min-width:90px}
-.btn-go.busy{background:#faad14;pointer-events:none}
-.btn-csv{background:#fff;color:#333;border:1.5px solid #d9d9d9!important;font-size:11px!important}
-.btn-csv:disabled{background:#f5f5f5;color:#ccc;cursor:not-allowed;border-color:#eee!important}
-.btn-cancel{background:#ff4d4f;color:#fff;font-size:11px!important;display:none}
-.btn-home{background:#fff;color:#333;border:1.5px solid #d9d9d9!important;font-size:11px!important}
-.btn-marker{background:#f6ffed;color:#52c41a;border:1.5px solid #b7eb8f!important;font-size:11px!important}
-.btn-marker.off{background:#fff1f0;color:#ff4d4f;border-color:#ffa39e!important}
-.btn-job{background:#fff7e6;color:#d46b08;border:1.5px solid #ffd591!important;font-size:11px!important}
-.btn-mylist{background:#f9f0ff;color:#722ed1;border:1.5px solid #d3adf7!important;font-size:11px!important}
-.btn-r{background:#f5f5f5;color:#333;border:1px solid #e0e0e0!important;font-size:11px!important;padding:4px 6px!important}
-.btn-r.on{background:#1677ff;color:#fff;border-color:#1677ff!important}
-.btn-sort{background:#f5f5f5;color:#333;border:1px solid #e0e0e0!important;font-size:11px!important}
-.btn-sort.on{background:#fa8c16;color:#fff;border-color:#fa8c16!important}
-.sep{color:#e0e0e0;margin:0 1px;font-size:14px;user-select:none}
+/* ===== 顶栏胶囊 ===== */
+#bar{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:200;
+  background:var(--c-surface);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-radius:28px;box-shadow:var(--shadow-panel);font-size:12px;
+  display:flex;align-items:center;gap:6px;padding:5px 8px}
+#bar .seg{display:flex;background:#f5f5f5;border-radius:20px;padding:2px}
+#bar .seg button{padding:5px 12px;border:none;border-radius:18px;font-size:11px;
+  cursor:pointer;font-weight:500;background:transparent;color:var(--c-text2);transition:var(--transition)}
+#bar .seg button.on{background:#fff;color:var(--c-primary);box-shadow:0 1px 4px rgba(0,0,0,.1);font-weight:600}
+#bar .btn-dist{position:relative;padding:5px 10px;border:1.5px solid var(--c-border);border-radius:18px;
+  font-size:11px;cursor:pointer;background:#fff;color:var(--c-text2);transition:var(--transition)}
+#bar .btn-dist.on{border-color:var(--c-primary);color:var(--c-primary);background:#f0f5ff}
+#bar .btn-go{padding:6px 18px;border:none;border-radius:20px;font-size:13px;font-weight:600;
+  cursor:pointer;background:var(--c-primary);color:#fff;transition:var(--transition);min-width:80px}
+#bar .btn-go:hover{opacity:.9;transform:translateY(-1px)}
+#bar .btn-go.busy{background:var(--c-amber);pointer-events:none;animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+#bar .btn-cancel{display:none;padding:5px 12px;border:none;border-radius:18px;font-size:11px;
+  cursor:pointer;background:var(--c-red);color:#fff}
+#bar .sep{width:1px;height:20px;background:var(--c-border);margin:0 2px}
+#bar .btn-icon{padding:5px 8px;border:1.5px solid var(--c-border);border-radius:18px;
+  font-size:11px;cursor:pointer;background:#fff;color:var(--c-text2);transition:var(--transition);white-space:nowrap}
+#bar .btn-icon:hover{border-color:var(--c-primary);color:var(--c-primary)}
+#bar .btn-icon.on{background:var(--c-primary);color:#fff;border-color:var(--c-primary)}
+#bar .btn-icon.amber{border-color:var(--c-amber);color:var(--c-amber)}
+#bar .btn-icon.amber:hover{background:var(--c-amber);color:#fff}
+#bar .more-wrap{position:relative}
+#bar .more-drop{display:none;position:absolute;top:100%;right:0;margin-top:6px;
+  background:#fff;border:1px solid var(--c-border);border-radius:var(--r-md);
+  box-shadow:var(--shadow-panel);padding:6px 0;min-width:130px;z-index:300}
+#bar .more-drop button{display:block;width:100%;padding:7px 14px;border:none;background:none;
+  font-size:11px;cursor:pointer;text-align:left;color:var(--c-text2);transition:var(--transition)}
+#bar .more-drop button:hover{background:#f0f5ff;color:var(--c-primary)}
+#bar .more-wrap:hover .more-drop{display:block}
+#bar .badge{display:inline-block;min-width:16px;height:16px;line-height:16px;text-align:center;
+  background:var(--c-red);color:#fff;border-radius:8px;font-size:10px;padding:0 4px;margin-left:-2px}
 
-/* ===== 区选择下拉 ===== */
-#distDrop{display:none;position:absolute;top:100%;left:0;margin-top:4px;
-  background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:8px 0;
-  box-shadow:0 4px 20px rgba(0,0,0,.12);min-width:160px;z-index:300}
+/* ===== 区下拉 ===== */
+#distDrop{display:none;position:absolute;top:100%;left:0;margin-top:6px;
+  background:#fff;border:1px solid var(--c-border);border-radius:var(--r-md);padding:8px 0;
+  box-shadow:var(--shadow-panel);min-width:160px;z-index:300}
 #distDrop label{display:block;padding:6px 16px;cursor:pointer;font-size:12px;white-space:nowrap}
 #distDrop label:hover{background:#f0f5ff}
 #distDrop input{margin-right:6px}
 #distDrop .act{display:flex;gap:4px;padding:4px 16px;border-top:1px solid #f0f0f0;margin-top:4px;padding-top:8px}
-#distDrop .act button{font-size:11px!important;padding:3px 8px!important;background:#f5f5f5;border:1px solid #d9d9d9;border-radius:4px;cursor:pointer}
+#distDrop .act button{font-size:11px;padding:3px 8px;background:#f5f5f5;border:1px solid #d9d9d9;border-radius:4px;cursor:pointer}
 
-/* ===== 提示 ===== */
-#tip{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);z-index:200;
-  background:rgba(0,0,0,.78);color:#fff;padding:8px 20px;
-  border-radius:20px;font-size:13px;pointer-events:none;text-align:center;max-width:85vw}
+/* ===== Toast ===== */
+#toast{position:absolute;bottom:24px;left:24px;z-index:300;
+  background:var(--c-surface);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  color:var(--c-text);padding:10px 20px;border-radius:var(--r-md);
+  box-shadow:var(--shadow-panel);font-size:13px;pointer-events:none;
+  opacity:0;transition:opacity .3s ease;max-width:60vw}
+#toast.show{opacity:1}
 #drawHint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:199;
   background:rgba(22,119,255,.9);color:#fff;padding:16px 32px;
   border-radius:10px;font-size:16px;font-weight:bold;display:none;pointer-events:none}
 
 /* ===== 结果面板 ===== */
-#res{position:absolute;top:70px;right:10px;z-index:200;width:450px;
-  max-height:calc(100vh - 100px);background:rgba(255,255,255,.97);
-  border:1px solid #e0e0e0;border-radius:10px;display:none;flex-direction:column;
-  box-shadow:0 4px 24px rgba(0,0,0,.12);font-size:13px;color:#333}
-#res .rh{padding:10px 14px;border-bottom:1px solid #f0f0f0;
+#res{position:absolute;top:68px;right:12px;z-index:200;width:420px;
+  max-height:calc(100vh - 90px);background:var(--c-surface);backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);border:1px solid var(--c-border);
+  border-radius:var(--r-lg);display:none;flex-direction:column;
+  box-shadow:var(--shadow-panel);font-size:13px;color:var(--c-text);overflow:hidden}
+#res .rh{padding:12px 16px;border-bottom:1px solid var(--c-border);
   display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:8px}
-#res .rh strong{color:#1677ff;font-size:14px}
+#res .rh .tabs{display:flex;gap:6px}
+#res .rh .tabs span{padding:4px 10px;border-radius:14px;font-size:12px;cursor:pointer;transition:var(--transition);
+  font-weight:500;user-select:none}
+#res .rh .tabs span.on{color:#fff}
+#res .rh .tabs .tab-hiring{color:var(--c-green)} #res .rh .tabs .tab-hiring.on{background:var(--c-green)}
+#res .rh .tabs .tab-uncertain{color:var(--c-amber)} #res .rh .tabs .tab-uncertain.on{background:var(--c-amber)}
+#res .rh .tabs .tab-all{color:var(--c-text3)} #res .rh .tabs .tab-all.on{background:var(--c-text3)}
 #res .rh .ctl{display:flex;gap:4px}
-#res .rh .ctl button{background:#e8e8e8;border:none;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:11px}
-#res .rh .ctl button.on{background:#1677ff;color:#fff}
-#res .rb{overflow-y:auto;flex:1;padding:8px}
+#res .rh .ctl button{background:transparent;border:1px solid var(--c-border);border-radius:var(--r-sm);
+  padding:3px 8px;cursor:pointer;font-size:11px;transition:var(--transition)}
+#res .rh .ctl button.on{background:#f0f5ff;color:var(--c-primary);border-color:var(--c-primary)}
 #res.mini{width:200px}#res.mini .rb,#res.mini .sortrow{display:none}
 
-/* ===== 排序栏 ===== */
-.sortrow{padding:6px 8px;border-bottom:1px solid #f0f0f0;display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap}
-.sortrow button{font-size:10px!important;padding:3px 8px!important;border-radius:4px;border:1px solid #e0e0e0;background:#fafafa;cursor:pointer}
-.sortrow button.on{background:#fa8c16;color:#fff;border-color:#fa8c16}
+/* ===== 排序 + 进度 ===== */
+.sortrow{padding:6px 12px;border-bottom:1px solid var(--c-border);display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap}
+.sortrow button{font-size:10px;padding:3px 10px;border-radius:12px;border:1px solid var(--c-border);
+  background:#fafafa;cursor:pointer;transition:var(--transition)}
+.sortrow button.on{background:var(--c-amber);color:#fff;border-color:var(--c-amber)}
+.prog-wrap{padding:6px 12px;border-bottom:1px solid var(--c-border);flex-shrink:0;display:none}
+.prog{background:#f0f0f0;border-radius:3px;height:4px}
+.prog div{background:var(--c-primary);height:100%;border-radius:3px;width:0;transition:width .3s}
+.pt{font-size:10px;color:var(--c-text3);margin-top:3px}
 
-/* ===== 进度条 ===== */
-.prog{background:#f0f0f0;border-radius:4px;height:4px;margin:6px 0}
-.prog div{background:#1677ff;height:100%;border-radius:4px;width:0;transition:width .2s}
-.pt{font-size:11px;color:#999;margin:3px 0}
-
-/* ===== 列表项 ===== */
-.rrow{background:#fafafa;border:1px solid #f0f0f0;border-left:3px solid transparent;
-  border-radius:6px;padding:8px 10px;margin-bottom:4px;cursor:pointer;transition:.15s}
-.rrow:hover{background:#f0f5ff}
-.rrow.h{border-left-color:#52c41a}.rrow.m{border-left-color:#faad14}.rrow.l{border-left-color:#ff4d4f}
-.rt{display:flex;justify-content:space-between;align-items:center}
-.rn{font-weight:bold;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rs{font-size:15px;font-weight:bold}.rs.h{color:#52c41a}.rs.m{color:#faad14}.rs.l{color:#ff4d4f}
-.rnatur{display:inline-block;padding:1px 5px;border-radius:3px;font-size:10px;margin-left:4px;
-  font-weight:normal;vertical-align:middle}
+/* ===== 列表卡片 ===== */
+.rb{overflow-y:auto;flex:1;padding:8px 12px}
+.rrow{background:#fff;border:1px solid var(--c-border);border-left:4px solid transparent;
+  border-radius:var(--r-md);padding:10px 12px;margin-bottom:6px;cursor:pointer;
+  transition:var(--transition);box-shadow:var(--shadow-card)}
+.rrow:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);transform:translateY(-1px)}
+.rrow.h{border-left-color:var(--c-green)}.rrow.u{border-left-color:var(--c-amber)}.rrow.n{border-left-color:#e0e0e0}
+.rt{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+.rn{font-weight:600;font-size:14px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rs{font-size:13px;font-weight:700;padding:2px 8px;border-radius:10px}
+.rs.h{background:#f6ffed;color:var(--c-green)}.rs.m{background:#fff7e6;color:var(--c-amber)}.rs.l{background:#fff1f0;color:var(--c-red)}
+.rnatur{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;margin-left:4px;font-weight:normal}
 .nat-外资{background:#fff0f6;color:#c41d7f} .nat-合资{background:#fff7e6;color:#d46b08}
 .nat-股份{background:#f6ffed;color:#389e0d} .nat-民营{background:#e6f7ff;color:#096dd9}
 .nat-个体{background:#f5f5f5;color:#666}
-.rm{display:flex;gap:6px;margin-top:2px;font-size:10px;color:#999;flex-wrap:wrap}
-.ra{font-size:10px;color:#999;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rd{display:none;margin-top:4px;padding-top:4px;border-top:1px solid #f0f0f0;font-size:10px;color:#666}
-.rd td{padding:1px 3px}.rd td:last-child{text-align:right}
-.rd table{width:100%}
-.links{margin-top:3px;font-size:10px;display:flex;gap:8px;flex-wrap:wrap}
-.links a{text-decoration:none;font-weight:bold}
-.links a.boss{color:#00c2a8}.links a.zl{color:#1677ff}.links a.wuyi{color:#ff6600}.links a.web{color:#8c8c8c}
+.rm{display:flex;gap:8px;margin-bottom:3px;font-size:11px;color:var(--c-text2);flex-wrap:wrap}
+.ra{font-size:11px;color:var(--c-text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rtags{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.rtag{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;white-space:nowrap}
+.rtag.found{background:#f6ffed;color:var(--c-green);border:1px solid #b7eb8f}
+.rtag.error{background:#fffbe6;color:var(--c-amber);border:1px solid #ffe58f}
+.rd{display:none;margin-top:6px;padding-top:6px;border-top:1px solid var(--c-border);font-size:11px;color:var(--c-text2)}
+.rd table{width:100%;border-collapse:collapse}
+.rd td{padding:3px 4px}.rd td:first-child{color:var(--c-text3);width:80px}
+.rd a{color:var(--c-primary);text-decoration:none}.rd a:hover{text-decoration:underline}
+.btn-save{background:none;border:none;font-size:16px;cursor:pointer;padding:0 4px;transition:var(--transition)}
+.btn-save.on{color:#faad14}
 
-/* ===== 分页 ===== */
-.pager{display:flex;gap:4px;justify-content:center;align-items:center;padding:8px 4px;border-top:1px solid #f0f0f0;flex-shrink:0}
-.pager button{padding:4px 10px;border:1px solid #d9d9d9;border-radius:4px;background:#fff;cursor:pointer;font-size:11px;color:#333;min-width:28px}
-.pager button.on{background:#1677ff;color:#fff;border-color:#1677ff}
-.pager button:disabled{color:#ccc;cursor:not-allowed;background:#f5f5f5}
-.pager .pg-info{font-size:11px;color:#999;margin:0 4px}
+/* ===== 翻页 ===== */
+.pager{display:flex;align-items:center;justify-content:center;gap:3px;padding:10px 12px;
+  border-top:1px solid var(--c-border);flex-shrink:0;flex-wrap:wrap}
+.pager button{padding:4px 9px;border:1px solid var(--c-border);border-radius:var(--r-sm);
+  background:#fff;font-size:11px;cursor:pointer;transition:var(--transition);min-width:28px}
+.pager button.on{background:var(--c-primary);color:#fff;border-color:var(--c-primary)}
+.pager button:disabled{opacity:.35;cursor:not-allowed}
+.pg-info{font-size:11px;color:var(--c-text3)}
 
-/* ===== 收藏按钮 ===== */
-.btn-save{background:none;border:1px solid #d9d9d9;border-radius:4px;cursor:pointer;padding:2px 6px;font-size:13px;transition:.15s;color:#999;line-height:1}
-.btn-save.on{color:#f5a623;border-color:#f5a623;background:#fff7e6}
-.btn-save:hover{transform:scale(1.15)}
-
-/* ===== 我的名单面板 ===== */
-#savedPanel{display:none;position:fixed;top:0;right:0;z-index:500;width:420px;height:100vh;
-  background:#fff;box-shadow:-4px 0 20px rgba(0,0,0,.15);flex-direction:column;font-size:13px}
-#savedPanel .sh{padding:12px 14px;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center}
-#savedPanel .sh strong{color:#722ed1;font-size:15px}
-#savedPanel .sh button{background:none;border:1px solid #e0e0e0;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px}
-#savedPanel .sb{overflow-y:auto;flex:1;padding:8px}
+/* ===== 收藏面板 ===== */
+#savedPanel{position:absolute;top:68px;right:12px;z-index:210;width:380px;
+  max-height:calc(100vh - 90px);background:#fff;border:1px solid var(--c-border);
+  border-radius:var(--r-lg);display:none;flex-direction:column;box-shadow:var(--shadow-panel)}
+#savedPanel .sh{padding:14px 16px;border-bottom:1px solid var(--c-border);
+  display:flex;justify-content:space-between;align-items:center;font-size:14px}
+#savedPanel .sh button{padding:4px 10px;border:1px solid var(--c-border);border-radius:var(--r-sm);
+  background:#fafafa;font-size:11px;cursor:pointer}
+#savedPanel .sb{overflow-y:auto;flex:1;padding:12px;font-size:13px}
 #savedPanel .srow{background:#fafafa;border:1px solid #f0f0f0;border-radius:6px;padding:8px 10px;margin-bottom:4px}
 #savedPanel .srow .rt{display:flex;justify-content:space-between;align-items:center}
 #savedPanel .srow .rn{font-weight:bold;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #savedPanel .srow .ra{font-size:10px;color:#999;margin-top:2px}
 #savedPanel .srow .op{display:flex;gap:6px;margin-top:4px}
 #savedPanel .srow .op a{font-size:10px;text-decoration:none;font-weight:bold}
-#savedPanel .empty{text-align:center;padding:40px;color:#999}
+.empty{text-align:center;padding:30px;color:var(--c-text3);line-height:2}
 </style>
 </head>
 <body>
@@ -138,45 +169,56 @@ body{font-family:"Microsoft YaHei",sans-serif;overflow:hidden;background:#fff}
 <div id="drawHint">在地图上按住鼠标拖拽画范围</div>
 
 <div id="bar">
-  <div class="r1">
-    <button class="btn-mode on" data-m="dist">行政区</button>
-    <button class="btn-mode" data-m="rect">拉框</button>
-    <button class="btn-mode" data-m="circle">画圆</button>
-    <button class="btn-mode" data-m="view">视野</button>
-    <div style="position:relative">
-      <button class="btn-dist on" id="btnDist">选择区域 &#9662;</button>
-      <div id="distDrop">
-        <label><input type="checkbox" value="黄岛区" checked> 黄岛区</label>
-        <label><input type="checkbox" value="市南区"> 市南区</label>
-        <label><input type="checkbox" value="市北区"> 市北区</label>
-        <label><input type="checkbox" value="李沧区"> 李沧区</label>
-        <label><input type="checkbox" value="崂山区"> 崂山区</label>
-        <label><input type="checkbox" value="城阳区"> 城阳区</label>
-        <label><input type="checkbox" value="即墨区"> 即墨区</label>
-        <label><input type="checkbox" value="胶州市"> 胶州市</label>
-        <label><input type="checkbox" value="平度市"> 平度市</label>
-        <label><input type="checkbox" value="莱西市"> 莱西市</label>
-        <div class="act">
-          <button id="btnSelAll">全选</button>
-          <button id="btnSelNone">清空</button>
-        </div>
+  <!-- 搜索模式分段控件 -->
+  <div class="seg">
+    <button class="btn-mode on" data-mode="dist">行政区</button>
+    <button class="btn-mode" data-mode="rect">拉框</button>
+    <button class="btn-mode" data-mode="circle">画圆</button>
+    <button class="btn-mode" data-mode="view">视野</button>
+  </div>
+  <!-- 区域选择 -->
+  <div style="position:relative">
+    <button class="btn-dist on" id="btnDist" onclick="event.stopPropagation();toggleDistDrop()">黄岛区 &#9662;</button>
+    <div id="distDrop">
+      <label><input type="checkbox" value="黄岛区" checked> 黄岛区</label>
+      <label><input type="checkbox" value="市南区"> 市南区</label>
+      <label><input type="checkbox" value="市北区"> 市北区</label>
+      <label><input type="checkbox" value="李沧区"> 李沧区</label>
+      <label><input type="checkbox" value="崂山区"> 崂山区</label>
+      <label><input type="checkbox" value="城阳区"> 城阳区</label>
+      <label><input type="checkbox" value="即墨区"> 即墨区</label>
+      <label><input type="checkbox" value="胶州市"> 胶州市</label>
+      <label><input type="checkbox" value="平度市"> 平度市</label>
+      <label><input type="checkbox" value="莱西市"> 莱西市</label>
+      <div class="act">
+        <button id="btnSelAll">全选</button>
+        <button id="btnSelNone">清空</button>
       </div>
     </div>
-    <button class="btn-go" id="btnGo">开始搜索</button>
-    <button class="btn-cancel" id="btnCancel">取消</button>
   </div>
-  <div class="r2">
-    <button class="btn-csv" id="btnCsv" disabled>导出CSV</button>
-    <button class="btn-home" id="btnHome">回家</button>
-    <button class="btn-marker on" id="btnMarker">显示标记</button>
-    <button class="btn-job" id="btnJob">查招聘</button>
-    <button class="btn-mylist" id="btnMyList">我的名单</button>
+  <!-- 主操作 -->
+  <button class="btn-go" id="btnGo">开始搜索</button>
+  <button class="btn-cancel" id="btnCancel">取消</button>
+  <!-- 更多菜单 -->
+  <div class="more-wrap">
+    <button class="btn-icon">···</button>
+    <div class="more-drop">
+      <button id="btnJobCheck">查招聘状态</button>
+      <button id="btnCsv" disabled>导出CSV</button>
+      <button id="btnHome">回家</button>
+      <button id="btnMarker" class="on">显示标记</button>
+      <button id="btnMyList">我的名单</button>
+    </div>
   </div>
 </div>
 
 <div id="res">
   <div class="rh">
-    <strong id="resTitle">结果</strong>
+    <div class="tabs">
+      <span class="tab-hiring on" data-filter="hiring">0 家在招</span>
+      <span class="tab-uncertain" data-filter="uncertain">0 家不明</span>
+      <span class="tab-all" data-filter="all">全部 0 家</span>
+    </div>
     <div class="ctl">
       <button id="btnList" class="on">列表</button>
       <button id="btnMapOnly">仅地图</button>
@@ -189,15 +231,17 @@ body{font-family:"Microsoft YaHei",sans-serif;overflow:hidden;background:#fff}
     <button data-s="scaleScore">规模最大</button>
     <button data-s="welfareScore">福利最好</button>
   </div>
-  <div class="rb" id="resBody">
-    <div class="prog" id="progWrap" style="display:none"><div id="progFill"></div></div>
+  <div class="prog-wrap" id="progWrap">
+    <div class="prog"><div id="progFill"></div></div>
     <div class="pt" id="progText"></div>
+  </div>
+  <div class="rb" id="resBody">
     <div id="resList"></div>
     <div id="pagination" style="display:none"></div>
   </div>
 </div>
 
-<div id="tip">提示：选"行政区"模式 + 勾选区域 → 点"开始搜索" | 右键设家 | Esc取消绘制</div>
+<div id="toast">提示：选"行政区"模式 + 勾选区域 → 点"开始搜索" | 右键设家 | Esc取消绘制</div>
 
 <div id="savedPanel">
   <div class="sh">
@@ -225,6 +269,20 @@ window._AMapSecurityConfig = { securityJsCode: '8c098a05e42da428b9fc42f2dbc47070
 var HOME = '青岛黄岛区学院路288号';
 var HLNG = 120.141, HLAT = 35.998;
 
+// 青岛各区中心坐标 — 硬编码避免 Geocoder 异步回调不可靠
+var DISTRICT_CENTERS = {
+  '黄岛区': [120.14, 35.96],
+  '市南区': [120.38, 36.06],
+  '市北区': [120.37, 36.09],
+  '李沧区': [120.42, 36.15],
+  '崂山区': [120.46, 36.10],
+  '城阳区': [120.39, 36.30],
+  '即墨区': [120.44, 36.38],
+  '胶州市': [120.03, 36.26],
+  '平度市': [119.95, 36.78],
+  '莱西市': [120.51, 36.86]
+};
+
 // 关键词：用最宽泛的词覆盖所有公司类型
 // 精简到最有效的15个关键词（公司负责全覆盖，其余补充行业漏网之鱼）
 var KEYS = ['公司','科技','工程','制造','商贸','贸易','电子','食品','化工','机械','物流','医疗','教育','建筑','房产'];
@@ -232,6 +290,23 @@ var KEYS = ['公司','科技','工程','制造','商贸','贸易','电子','食�
 var MATCH = ['科技','信息技术','网络','互联网','通信','电子','计算机','自动化',
   '数据','智能','新能源','制造','检测','软件','工程','生物','医药','物流',
   '教育','建筑','食品','化工','机械','新材料','环保','服装'];
+
+// toast 替代 tip
+var toastTimer = null;
+function toast(msg, duration) {
+  if (typeof duration === 'undefined') duration = 3000;
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  if (duration > 0) toastTimer = setTimeout(function() { el.classList.remove('show'); }, duration);
+}
+
+// 区下拉切换
+function toggleDistDrop() {
+  var dd = document.getElementById('distDrop');
+  dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
+}
 
 // ============================================================
 //  地图 & 家标记
@@ -290,11 +365,11 @@ function activateMouseTool() {
   if (mode === 'rect') {
     mouseTool.rectangle({ strokeColor: '#1677ff', strokeWeight: 3, strokeOpacity: .8, fillColor: '#1677ff', fillOpacity: .12 });
     document.getElementById('drawHint').style.display = 'block';
-    document.getElementById('tip').textContent = '拉框模式：在地图上按住拖拽画矩形，松开完成。Esc取消';
+    document.getElementById('toast').textContent = '拉框模式：在地图上按住拖拽画矩形，松开完成。Esc取消';
   } else if (mode === 'circle') {
     mouseTool.circle({ strokeColor: '#1677ff', strokeWeight: 3, strokeOpacity: .8, fillColor: '#1677ff', fillOpacity: .12 });
     document.getElementById('drawHint').style.display = 'block';
-    document.getElementById('tip').textContent = '画圆模式：在地图上按住拖拽画圆，松开完成。Esc取消';
+    document.getElementById('toast').textContent = '画圆模式：在地图上按住拖拽画圆，松开完成。Esc取消';
   }
 }
 
@@ -303,12 +378,12 @@ mouseTool.on('draw', function(e) {
   drawObj = e.obj;
   if (mode === 'rect') {
     drawBounds = e.obj.getBounds();
-    document.getElementById('tip').textContent = '[OK] 矩形已画好 — 点"开始搜索"';
+    document.getElementById('toast').textContent = '[OK] 矩形已画好 — 点"开始搜索"';
   } else {
     var c = e.obj.getCenter();
     drawCenter = [c.lng, c.lat];
     drawRadius = e.obj.getRadius();
-    document.getElementById('tip').textContent = '[OK] 圆形已画好(约'+(drawRadius/1000).toFixed(1)+'km) — 点"开始搜索"';
+    document.getElementById('toast').textContent = '[OK] 圆形已画好(约'+(drawRadius/1000).toFixed(1)+'km) — 点"开始搜索"';
   }
   mouseTool.close(false);
   map.setStatus({ dragEnable: true });
@@ -323,7 +398,7 @@ document.addEventListener('keydown', function(e) {
     clearUserDraw();
     document.getElementById('drawHint').style.display = 'none';
     hideCancel();
-    document.getElementById('tip').textContent = '已取消。可自由移动地图，选模式后操作';
+    document.getElementById('toast').textContent = '已取消。可自由移动地图，选模式后操作';
   }
 });
 
@@ -356,15 +431,15 @@ document.getElementById('bar').addEventListener('click', function(e) {
   if (t.classList.contains('btn-mode')) {
     document.querySelectorAll('.btn-mode').forEach(function(b) { b.classList.remove('on'); });
     t.classList.add('on');
-    mode = t.dataset.m;
+    mode = t.dataset.mode;
     clearUserDraw();
     if (mode === 'dist' || mode === 'view') {
       mouseTool.close(true); map.setStatus({ dragEnable: true });
       document.getElementById('drawHint').style.display = 'none';
       if (mode === 'view') {
-        document.getElementById('tip').textContent = '视野模式：移动/缩放地图到目标区域 → 点"开始搜索"搜当前屏幕内的公司';
+        document.getElementById('toast').textContent = '视野模式：移动/缩放地图到目标区域 → 点"开始搜索"搜当前屏幕内的公司';
       } else {
-        document.getElementById('tip').textContent = '行政区模式：勾选区域 → 点"开始搜索"';
+        document.getElementById('toast').textContent = '行政区模式：勾选区域 → 点"开始搜索"';
       }
       document.getElementById('btnDist').style.display = (mode === 'dist') ? '' : 'none';
     } else {
@@ -396,51 +471,6 @@ document.getElementById('btnSelNone').addEventListener('click', function() {
   document.querySelectorAll('#distDrop input[type=checkbox]').forEach(function(c) { c.checked = false; });
 });
 
-// 查招聘 — 批量打开黄岛区公司招聘链接
-document.getElementById('btnJob').onclick = function() {
-  if (isSearching || !allResults.length) {
-    alert('请先搜索出结果');
-    return;
-  }
-  var hd = allResults.filter(function(r) {
-    return r.address && r.address.indexOf('黄岛') >= 0;
-  });
-  if (!hd.length) {
-    alert('没有黄岛区的公司');
-    return;
-  }
-  var msg = '将打开 ' + hd.length + ' 家黄岛区公司的招聘链接\n（每家 5 个标签页 = ' + (hd.length * 5) + ' 个标签页）\n\n浏览器可能卡顿，确定继续？';
-  if (hd.length > 15) {
-    msg += '\n\n建议：先缩小搜索范围或先收藏目标公司';
-  }
-  if (!confirm(msg)) return;
-
-  var delay = 0;
-  hd.forEach(function(r) {
-    setTimeout(function() {
-      window.open(bossLink(r.name), '_blank');
-    }, delay);
-    delay += 80;
-    setTimeout(function() {
-      window.open(zlLink(r.name), '_blank');
-    }, delay);
-    delay += 80;
-    setTimeout(function() {
-      window.open(wuyiLink(r.name), '_blank');
-    }, delay);
-    delay += 80;
-    setTimeout(function() {
-      window.open(bdLink(r.name), '_blank');
-    }, delay);
-    delay += 80;
-    setTimeout(function() {
-      window.open(rcLink(r.name), '_blank');
-    }, delay);
-    delay += 80;
-  });
-  document.getElementById('tip').textContent = '[OK] 正在打开 ' + hd.length + ' 家公司的招聘链接...';
-};
-
 // 我的名单面板
 document.getElementById('btnMyList').onclick = function() {
   renderSavedPanel();
@@ -456,7 +486,7 @@ document.getElementById('btnClearSaved').onclick = function() {
   localStorage.removeItem('qd_saved_companies');
   renderSavedPanel();
   renderPage(currentPageNum);
-  document.getElementById('tip').textContent = '收藏名单已清空';
+  document.getElementById('toast').textContent = '收藏名单已清空';
 };
 document.getElementById('btnExportSaved').onclick = function() {
   if (!savedList.length) return;
@@ -472,7 +502,7 @@ document.getElementById('btnExportSaved').onclick = function() {
   a.download = 'saved_companies_' + new Date().toISOString().slice(0,10) + '.csv';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(a.href);
-  document.getElementById('tip').textContent = '[OK] 名单已导出: ' + savedList.length + ' 家';
+  document.getElementById('toast').textContent = '[OK] 名单已导出: ' + savedList.length + ' 家';
 };
 
 // 标记开关
@@ -498,7 +528,7 @@ document.getElementById('btnHome').onclick = function() {
   clearUserDraw(); clearDistrictShapes();
   document.getElementById('drawHint').style.display = 'none';
   map.setCenter([HLNG, HLAT]); map.setZoom(13);
-  document.getElementById('tip').textContent = '已回到 ' + HOME;
+  document.getElementById('toast').textContent = '已回到 ' + HOME;
 };
 
 // 结果面板切换
@@ -543,7 +573,7 @@ map.on('rightclick', function(e) {
     var c = new AMap.Circle({ center: [HLNG, HLAT], radius: r * 1000, strokeColor: '#ddd', strokeWeight: 1, strokeOpacity: .6, fillOpacity: 0, strokeStyle: 'dashed' });
     c.setMap(map); homeCircles.push(c);
   });
-  document.getElementById('tip').textContent = '[OK] 家已更新! ' + p.lng.toFixed(4) + ',' + p.lat.toFixed(4) + ' | 搜索时距离以此为准';
+  document.getElementById('toast').textContent = '[OK] 家已更新! ' + p.lng.toFixed(4) + ',' + p.lat.toFixed(4) + ' | 搜索时距离以此为准';
 });
 
 // ============================================================
@@ -627,24 +657,49 @@ function haversine(lng1, lat1, lng2, lat2) {
 }
 
 // 获取搜索目标
+// 根据 bounds 生成自适应网格搜索计划
+function generateGridPlans(bounds, label) {
+  var sw = bounds.getSouthWest(), ne = bounds.getNorthEast();
+  var RADIUS = 15000; // 15km
+  var spacing = 2 * RADIUS * 0.7 / 111000; // 度数间距（重叠30%）
+  var lngSpan = ne.lng - sw.lng;
+  var latSpan = ne.lat - sw.lat;
+  var cols = Math.max(1, Math.min(8, Math.ceil(lngSpan / spacing)));
+  var rows = Math.max(1, Math.min(8, Math.ceil(latSpan / spacing)));
+  var plans = [];
+  var cellLng = cols > 1 ? lngSpan / cols : 0;
+  var cellLat = rows > 1 ? latSpan / rows : 0;
+  for (var ci = 0; ci < cols; ci++) {
+    for (var ri = 0; ri < rows; ri++) {
+      plans.push({
+        label: label + (cols * rows > 1 ? '#' + (ci * rows + ri + 1) : ''),
+        lng: sw.lng + cellLng * (ci + 0.5),
+        lat: sw.lat + cellLat * (ri + 0.5),
+        radius: RADIUS
+      });
+    }
+  }
+  return plans;
+}
+
 function getSearchTargets(callback) {
   if (mode === 'dist') {
     // 行政区模式
     var districts = getSelectedDistricts();
     if (!districts.length) {
-      document.getElementById('tip').textContent = '请至少勾选一个区域';
+      document.getElementById('toast').textContent = '请至少勾选一个区域';
       callback(null); return;
     }
     resolveDistricts(districts, callback);
   } else if (mode === 'rect') {
     if (!drawBounds) {
-      document.getElementById('tip').textContent = '请先拉框画范围，再点搜索';
+      document.getElementById('toast').textContent = '请先拉框画范围，再点搜索';
       callback(null); return;
     }
     callback([{ label: '矩形区域', bounds: drawBounds }]);
   } else if (mode === 'circle') {
     if (!drawCenter || !drawRadius) {
-      document.getElementById('tip').textContent = '请先画圆，再点搜索';
+      document.getElementById('toast').textContent = '请先画圆，再点搜索';
       callback(null); return;
     }
     // 圆 → 取外接正方形
@@ -759,7 +814,7 @@ function resolveDistricts(districts, callback) {
 
   function finish() {
     if (results.length === 0) {
-      document.getElementById('tip').textContent = '未能解析任何区域，请检查输入或用圈选模式';
+      document.getElementById('toast').textContent = '未能解析任何区域，请检查输入或用圈选模式';
       callback(null); return;
     }
     // 显示在地图上
@@ -791,7 +846,7 @@ document.getElementById('btnGo').onclick = function() {
   allResults = []; clearMarkers();
   document.getElementById('res').style.display = 'flex';
   document.getElementById('resList').innerHTML = '';
-  document.getElementById('resTitle').textContent = '准备搜索...';
+  document.getElementById('toast').textContent = '准备搜索...';
   document.getElementById('progWrap').style.display = 'block';
   document.getElementById('progFill').style.width = '0%';
   document.getElementById('progText').textContent = '正在规划搜索区域...';
@@ -803,82 +858,78 @@ document.getElementById('btnGo').onclick = function() {
   var collectTimer = null;
 
   if (mode === 'dist') {
-    // 行政区：用 JS API Geocoder 定位区中心
+    // 行政区：用硬编码坐标 + 自适应网格（不再依赖 Geocoder 异步回调）
     var districts = getSelectedDistricts();
     if (!districts.length) {
-      document.getElementById('tip').textContent = '请至少勾选一个区域'; searchDone(); return;
+      document.getElementById('toast').textContent = '请至少勾选一个区域'; searchDone(); return;
     }
-    var searchStarted = false;
-    function fireSearch(plans) {
-      if (searchStarted) return;
-      searchStarted = true;
-      if (collectTimer) { clearTimeout(collectTimer); collectTimer = null; }
-      // 去重（同一区可能多次定位）
-      var seenLabels = {};
-      plans = plans.filter(function(p) { if (seenLabels[p.label]) return false; seenLabels[p.label] = true; return true; });
-      startSearch(plans);
-    }
-    var pending = districts.length;
-    document.getElementById('progText').textContent = '正在定位 ' + pending + ' 个区域...';
+    var found = 0, missed = 0;
     districts.forEach(function(d) {
-      var fullName = '青岛市' + d;
-      console.log('DEBUG Geocoder searching:', fullName);
-      geocoder.getLocation(fullName, function(status, result) {
-        console.log('DEBUG Geocoder cb:', d, 'status=' + status, result ? 'info=' + result.info : 'null');
-        if (status === 'complete' && result.info === 'OK' && result.geocodes.length > 0) {
-          var loc = result.geocodes[0].location;
-          console.log('DEBUG Geocoder OK:', d, 'lng=' + loc.lng, 'lat=' + loc.lat, 'address=' + result.geocodes[0].formattedAddress);
-          // 3×3 网格搜索，每个格点间距 0.11°（约12km），半径15km确保重叠覆盖
-          if (!plans.some(function(p) { return p.label && p.label.indexOf(d) === 0; })) {
-            var offsets = [-0.11, 0, 0.11];
-            for (var gi = 0; gi < offsets.length; gi++) {
-              for (var gj = 0; gj < offsets.length; gj++) {
-                plans.push({
-                  label: d + '#' + (gi*3+gj+1),
-                  lng: loc.lng + offsets[gi],
-                  lat: loc.lat + offsets[gj],
-                  radius: 15000
-                });
-              }
-            }
+      var center = DISTRICT_CENTERS[d];
+      if (!center) {
+        // 未知区域：用 Geocoder 兜底（异步，不影响已有区域）
+        missed++;
+        console.log('DIST: unknown district, trying Geocoder:', d);
+        geocoder.getLocation('青岛市' + d, function(status, result) {
+          if (status === 'complete' && result.info === 'OK' && result.geocodes.length > 0) {
+            var loc = result.geocodes[0].location;
+            addDistrictPlans(d, loc.lng, loc.lat);
           }
-          document.getElementById('tip').textContent = '已定位: ' + d;
-        }
-        pending--;
-        if (pending <= 0) {
-          if (plans.length === 0) {
-            var c = map.getCenter();
-            plans.push({label: '当前视野', lng: c.lng, lat: c.lat, radius: 20000});
-          }
-          fireSearch(plans);
-        }
-      });
-    });
-    // 10秒兜底（Geocoder 有时慢）
-    collectTimer = setTimeout(function() {
-      console.log('DEBUG Geocoder timeout fired, plans.length=' + plans.length + ' pending=' + pending);
-      if (plans.length === 0) {
-        var c = map.getCenter();
-        plans.push({label: '当前视野(兜底)', lng: c.lng, lat: c.lat, radius: 20000});
+          missed--;
+          if (found + missed === 0 || (missed === 0 && plans.length > 0)) startSearch(plans);
+        });
+        return;
       }
-      fireSearch(plans);
-    }, 10000);
+      found++;
+      addDistrictPlans(d, center[0], center[1]);
+    });
+
+    function addDistrictPlans(d, lng, lat) {
+      // 9×9 网格，间距 0.06°（约6.7km），半径5km — 避开API 200条截断
+      var offsets = [-0.24, -0.18, -0.12, -0.06, 0, 0.06, 0.12, 0.18, 0.24];
+      for (var gi = 0; gi < offsets.length; gi++) {
+        for (var gj = 0; gj < offsets.length; gj++) {
+          plans.push({
+            label: d + '#' + (gi * offsets.length + gj + 1),
+            lng: lng + offsets[gi],
+            lat: lat + offsets[gj],
+            radius: 5000
+          });
+        }
+      }
+      document.getElementById('toast').textContent = '已定位: ' + d + ' (' + plans.length + ' 网格点)';
+    }
+
+    document.getElementById('progText').textContent = '已定位 ' + found + ' 个区域, ' + plans.length + ' 网格点';
+    // 没有未知区域，直接开始搜索
+    if (missed === 0) {
+      startSearch(plans);
+    } else {
+      // 有未知区域在等 Geocoder，最多等 8 秒
+      collectTimer = setTimeout(function() {
+        if (plans.length === 0) {
+          var c = map.getCenter();
+          plans.push({label: '当前视野(兜底)', lng: c.lng, lat: c.lat, radius: 20000});
+        }
+        startSearch(plans);
+      }, 8000);
+    }
     return;
   }
 
   if (mode === 'rect') {
     if (!drawBounds) { searchDone(); return; }
-    var sw = drawBounds.getSouthWest(), ne = drawBounds.getNorthEast();
-    plans.push({label: '矩形', lng: (sw.lng+ne.lng)/2, lat: (sw.lat+ne.lat)/2,
-      radius: Math.max(Math.abs(ne.lng-sw.lng), Math.abs(ne.lat-sw.lat))*111000/2});
+    plans = generateGridPlans(drawBounds, '矩形');
   } else if (mode === 'circle') {
     if (!drawCenter || !drawRadius) { searchDone(); return; }
-    plans.push({label: '圆形', lng: drawCenter[0], lat: drawCenter[1], radius: drawRadius});
+    var deg2 = drawRadius / 111000;
+    var b2 = new AMap.Bounds(
+      [drawCenter[0] - deg2, drawCenter[1] - deg2],
+      [drawCenter[0] + deg2, drawCenter[1] + deg2]
+    );
+    plans = generateGridPlans(b2, '圆形(' + (drawRadius / 1000).toFixed(1) + 'km)');
   } else if (mode === 'view') {
-    var c = map.getCenter(), vb = map.getBounds();
-    var sw2 = vb.getSouthWest(), ne2 = vb.getNorthEast();
-    plans.push({label: '视野', lng: c.lng, lat: c.lat,
-      radius: Math.max(Math.abs(ne2.lng-sw2.lng), Math.abs(ne2.lat-sw2.lat))*111000/2});
+    plans = generateGridPlans(map.getBounds(), '视野');
   }
   // 限幅
   plans.forEach(function(p, i) {
@@ -895,34 +946,76 @@ document.getElementById('btnGo').onclick = function() {
     });
 
     var WS_KEY = 'b756c2d47e44c7a36768bd8f2d2d7665';
-    var PAGE_SIZE = 25, MAX_PAGES = 25, FETCH_DELAY = 300;
+    var PAGE_SIZE = 25, MAX_PAGES = 8, FETCH_DELAY = 200;
     var all = [], seen = {};
     var planIdx = 0, currentPage = 1, pagesNeeded = 1;
     var totalPagesEstimate = 0, pagesFetched = 0;
     var finished = false;
-    var KEYWORDS = encodeURIComponent('公司|工厂|企业|科技|工程|制造|商贸|机械|物流');
+    // types=170000 公司企业 — 比 keywords 多6倍结果；API硬限制200条
+    var API_PARAMS = '&types=170000';
 	    var OVERFLOW_THRESHOLD = 800;
 	    var MAX_SUBDIVIDE = 2;
 
-    document.getElementById('tip').textContent = 'REST API 网格搜索 ' + plans.length + ' 点...';
+    document.getElementById('toast').textContent = 'REST API 网格搜索 ' + plans.length + ' 点...';
     document.getElementById('progText').textContent = '查询中...';
 
-    function fetchNextPage() {
-      if (finished || searchCancelled || planIdx >= plans.length) {
-        if (!finished) finishUp();
-        return;
+    // 用 async/await 循环替代递归 setTimeout，消除格点风暴
+    var fetchSeq = 0, MAX_FETCHES = plans.length * MAX_PAGES + 100;
+
+    async function runSearchLoop() {
+      for (planIdx = 0; planIdx < plans.length && !searchCancelled; planIdx++) {
+        if (finished) return;
+        var plan = plans[planIdx];
+        currentPage = 1; pagesNeeded = 1;
+
+        // 首頁：获取 count 以确定 pagesNeeded
+        var firstData = await fetchOnePage(plan, 1);
+        if (firstData === null) continue; // 网络错误，跳过该格点
+
+        var count = parseInt(firstData.count) || 0;
+        pagesNeeded = Math.max(1, Math.min(Math.ceil(count / PAGE_SIZE), MAX_PAGES));
+        totalPagesEstimate += pagesNeeded;
+
+        // 溢出检测
+        var subLv = plan.level || 0;
+        if (count >= OVERFLOW_THRESHOLD && subLv < MAX_SUBDIVIDE) {
+          var nxtLv = subLv + 1;
+          var s2 = Math.round(plan.radius / 2);
+          var so = 0.055 / nxtLv;
+          for (var si = 0; si < 2; si++) {
+            for (var sj = 0; sj < 2; sj++) {
+              plans.push({
+                label: plan.label + '.' + nxtLv + '.' + (si*2+sj+1),
+                lng: plan.lng + (si ? so : -so), lat: plan.lat + (sj ? so : -so),
+                radius: s2, level: nxtLv
+              });
+            }
+          }
+          totalPagesEstimate += 4;
+        }
+
+        // 剩余页
+        for (currentPage = 2; currentPage <= pagesNeeded && !searchCancelled; currentPage++) {
+          if (fetchSeq >= MAX_FETCHES) break;
+          await fetchOnePage(plan, currentPage);
+          await delay(FETCH_DELAY);
+        }
+        // 格点间短暂延迟
+        if (planIdx < plans.length - 1) await delay(FETCH_DELAY);
       }
-      var plan = plans[planIdx];
+      if (!finished) finishUp();
+    }
+
+    async function fetchOnePage(plan, pageNum) {
+      if (fetchSeq >= MAX_FETCHES || searchCancelled) return null;
+      fetchSeq++;
       var url = 'https://restapi.amap.com/v3/place/around?key=' + WS_KEY +
         '&location=' + plan.lng.toFixed(6) + ',' + plan.lat.toFixed(6) +
-        '&radius=' + plan.radius +
-        '&keywords=' + KEYWORDS +
-        '&offset=' + PAGE_SIZE + '&page=' + currentPage + '&extensions=all';
-
-      console.log('REST fetch', plan.label, 'p' + currentPage, 'r=' + plan.radius);
-
-      fetch(url).then(function(r) { return r.json(); }).then(function(data) {
-        if (finished || searchCancelled) return;
+        '&radius=' + plan.radius + API_PARAMS +
+        '&offset=' + PAGE_SIZE + '&page=' + pageNum + '&extensions=all';
+      try {
+        var resp = await fetch(url);
+        var data = await resp.json();
         pagesFetched++;
         if (data.status === '1' && data.pois) {
           data.pois.forEach(function(poi) {
@@ -930,56 +1023,26 @@ document.getElementById('btnGo').onclick = function() {
             if (!seen[key]) { seen[key] = true; all.push(poi); }
           });
         }
-        if (currentPage === 1) {
-          var count = parseInt(data.count) || 0;
-          pagesNeeded = Math.min(Math.ceil(count / PAGE_SIZE), MAX_PAGES);
-          totalPagesEstimate += pagesNeeded;
-
-          // 四叉树溢出检测：结果数接近 API 上限 -> 裂变成 2x2 子网格
-          var subLv = plan.level || 0;
-          if (count >= OVERFLOW_THRESHOLD && subLv < MAX_SUBDIVIDE) {
-            var nxtLv = subLv + 1;
-            var subSpacing = 0.055 / nxtLv;
-            var subRadius = Math.round(plan.radius / 2);
-            var subOff = [-subSpacing, subSpacing];
-            var added = 0;
-            for (var si = 0; si < 2; si++) {
-              for (var sj = 0; sj < 2; sj++) {
-                plans.push({
-                  label: plan.label + '.' + nxtLv + '.' + (si*2+sj+1),
-                  lng: plan.lng + subOff[si],
-                  lat: plan.lat + subOff[sj],
-                  radius: subRadius,
-                  level: nxtLv
-                });
-                added++;
-              }
-            }
-            totalPagesEstimate += added;
-            console.log('QuadSplit:', plan.label, 'count=' + count,
-              '-> ' + added + ' sub-plans r=' + subRadius + 'm lv=' + nxtLv);
-          }
-        }
-        var pct = totalPagesEstimate > 0 ? Math.round(Math.min(100, pagesFetched / Math.max(totalPagesEstimate, pagesFetched) * 100)) : 0;
+        var pct = totalPagesEstimate > 0 ? Math.round(Math.min(99, pagesFetched / Math.max(totalPagesEstimate, pagesFetched) * 100)) : 0;
         document.getElementById('progFill').style.width = pct + '%';
         document.getElementById('progText').textContent = pagesFetched + '/' + totalPagesEstimate + ' 页 ' + all.length + '家';
-        document.getElementById('tip').textContent = plan.label + ' p' + currentPage + ' ' +
+        document.getElementById('toast').textContent = plan.label + ' p' + pageNum + ' ' +
           (data.status === '1' ? 'OK' : 'err') + ' [' + all.length + ']';
-        currentPage++;
-        if (currentPage > pagesNeeded) { planIdx++; currentPage = 1; pagesNeeded = 1; }
-        setTimeout(fetchNextPage, FETCH_DELAY);
-      }).catch(function(err) {
-        console.log('REST err:', err.message);
-        pagesFetched++; currentPage++;
-        if (currentPage > pagesNeeded) { planIdx++; currentPage = 1; pagesNeeded = 1; }
-        setTimeout(fetchNextPage, FETCH_DELAY);
-      });
+        return data;
+      } catch(err) {
+        console.log('REST err:', plan.label, 'p' + pageNum, err.message);
+        pagesFetched++;
+        return null;
+      }
     }
-    fetchNextPage();
+
+    function delay(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+
+    runSearchLoop();
 
     var fallbackTimer = setTimeout(function() {
       if (!finished) { console.log('REST timeout'); finishUp(); }
-    }, 120000);
+    }, 180000);
 
     function finishUp() {
       if (finished) return; finished = true; clearTimeout(fallbackTimer);
@@ -1000,6 +1063,8 @@ document.getElementById('btnGo').onclick = function() {
       if (excluded) console.log('Excluded (个体户/工作室):', excluded);
       scored.sort(function(a, b) { return b.total - a.total; });
       allResults = scored;
+      filteredResults = null;
+      jobFilter = 'all';
       try {
         currentPageNum = 1;
         renderPage(1);
@@ -1008,7 +1073,7 @@ document.getElementById('btnGo').onclick = function() {
         document.getElementById('resList').innerHTML = '<div style=\"padding:20px;color:red\">渲染错误: ' + e.message + '</div>';
       }
       document.getElementById('btnCsv').disabled = (scored.length === 0);
-      document.getElementById('tip').textContent = scored.length ?
+      document.getElementById('toast').textContent = scored.length ?
         '[OK] ' + scored.length + ' 家 | 综合排序 | 点击看详情' :
         '0结果 - REST API无返回';
       searchDone();
@@ -1017,6 +1082,189 @@ document.getElementById('btnGo').onclick = function() {
 };
 
 var searchCancelled = false;
+
+// 招聘状态
+var jobStatuses = {}; // { "公司名|地址": { status, sources } }
+var jobFilter = 'all'; // hiring | uncertain | all
+var filteredResults = null;
+var JOB_API = 'http://localhost:23334/check';
+
+async function checkJobStatuses() {
+  if (!allResults.length) { toast('请先搜索出结果'); return; }
+
+  var unchecked = allResults.filter(function(r) {
+    var key = r.name + '|' + (r.address || '');
+    return !jobStatuses[key];
+  });
+
+  if (!unchecked.length) {
+    toast('所有公司已查过招聘状态');
+    return;
+  }
+
+  toast('正在查询 ' + unchecked.length + ' 家公司的招聘状态...', 0);
+  var btn = document.getElementById('btnJobCheck');
+  btn.classList.add('busy');
+  btn.textContent = '查询中...';
+
+  var BATCH = 20;
+  for (var i = 0; i < unchecked.length; i += BATCH) {
+    var batch = unchecked.slice(i, i + BATCH);
+    var payload = batch.map(function(r) {
+      return { name: r.name, website: r.website || '' };
+    });
+
+    try {
+      var resp = await fetch(JOB_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      var data = await resp.json();
+
+      for (var j = 0; j < batch.length; j++) {
+        var r = batch[j];
+        var key = r.name + '|' + (r.address || '');
+        var result = data[r.name];
+        if (result) {
+          jobStatuses[key] = result;
+        } else {
+          jobStatuses[key] = { status: 'error', sources: {} };
+        }
+      }
+    } catch(e) {
+      console.log('Job check error:', e.message);
+      for (var k = 0; k < batch.length; k++) {
+        var r2 = batch[k];
+        var key2 = r2.name + '|' + (r2.address || '');
+        jobStatuses[key2] = { status: 'error', sources: {}, _error: e.message };
+      }
+    }
+
+    var done = Math.min(i + BATCH, unchecked.length);
+    document.getElementById('toast').textContent = '查询中... ' + done + '/' + unchecked.length;
+  }
+
+  btn.classList.remove('busy');
+  btn.textContent = '查招聘状态';
+
+  var hiring = 0, uncertain = 0, notFound = 0;
+  allResults.forEach(function(r) {
+    var key = r.name + '|' + (r.address || '');
+    var s = jobStatuses[key];
+    if (!s) return;
+    if (s.status === 'hiring') hiring++;
+    else if (s.status === 'uncertain') uncertain++;
+    else notFound++;
+  });
+
+  toast('查询完成: ' + hiring + ' 家在招, ' + uncertain + ' 家结果不明, ' + notFound + ' 家未找到');
+  updateFilterTabs();
+  applyJobFilter();
+}
+
+// 绑定按钮事件
+document.getElementById('btnJobCheck').onclick = function() {
+  if (isSearching) return;
+  checkJobStatuses();
+};
+
+function updateFilterTabs() {
+  var hiring = 0, uncertain = 0;
+  allResults.forEach(function(r) {
+    var key = r.name + '|' + (r.address || '');
+    var s = jobStatuses[key];
+    if (!s) return;
+    if (s.status === 'hiring') hiring++;
+    else if (s.status === 'uncertain') uncertain++;
+  });
+  var th = document.querySelector('.tab-hiring');
+  var tu = document.querySelector('.tab-uncertain');
+  var ta = document.querySelector('.tab-all');
+  if (th) th.textContent = hiring + ' 家在招';
+  if (tu) tu.textContent = uncertain + ' 家不明';
+  if (ta) ta.textContent = '全部 ' + allResults.length + ' 家';
+}
+
+document.getElementById('res').addEventListener('click', function(e) {
+  var span = e.target.closest('.tabs span');
+  if (!span) return;
+  var filter = span.dataset.filter;
+  if (!filter) return;
+  jobFilter = filter;
+  applyJobFilter();
+});
+
+function applyJobFilter() {
+  document.querySelectorAll('#res .tabs span').forEach(function(s) {
+    s.classList.toggle('on', s.dataset.filter === jobFilter);
+  });
+
+  if (jobFilter === 'hiring') {
+    filteredResults = allResults.filter(function(r) {
+      var s = jobStatuses[r.name + '|' + (r.address || '')];
+      return s && s.status === 'hiring';
+    });
+  } else if (jobFilter === 'uncertain') {
+    filteredResults = allResults.filter(function(r) {
+      var s = jobStatuses[r.name + '|' + (r.address || '')];
+      return s && s.status === 'uncertain';
+    });
+  } else {
+    filteredResults = allResults;
+  }
+
+  currentPageNum = 1;
+  var results = filteredResults;
+  var start = 0;
+  var pageData = results.slice(start, start + PAGE_SIZE_DISPLAY);
+  renderList(pageData, start);
+  renderPaginationFiltered(results);
+  if (showMarkers) { addMarkers(pageData); } else { clearMarkers(); }
+}
+
+function renderPaginationFiltered(results) {
+  var totalPages = Math.ceil(results.length / PAGE_SIZE_DISPLAY);
+  var el = document.getElementById('pagination');
+  if (totalPages <= 1) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.className = 'pager';
+
+  var html = '';
+  html += '<button ' + (currentPageNum <= 1 ? 'disabled' : 'onclick="goFilteredPage(' + (currentPageNum - 1) + ')"') + '>&lt;</button>';
+
+  var startP = Math.max(1, currentPageNum - 3);
+  var endP = Math.min(totalPages, currentPageNum + 3);
+  if (startP > 1) {
+    html += '<button onclick="goFilteredPage(1)">1</button>';
+    if (startP > 2) html += '<span class="pg-info">...</span>';
+  }
+  for (var p = startP; p <= endP; p++) {
+    html += '<button class="' + (p === currentPageNum ? 'on' : '') + '" onclick="goFilteredPage(' + p + ')">' + p + '</button>';
+  }
+  if (endP < totalPages) {
+    if (endP < totalPages - 1) html += '<span class="pg-info">...</span>';
+    html += '<button onclick="goFilteredPage(' + totalPages + ')">' + totalPages + '</button>';
+  }
+  html += '<button ' + (currentPageNum >= totalPages ? 'disabled' : 'onclick="goFilteredPage(' + (currentPageNum + 1) + ')"') + '>&gt;</button>';
+  html += '<span class="pg-info">共 ' + results.length + ' 条</span>';
+  el.innerHTML = html;
+}
+
+function goFilteredPage(pageNum) {
+  var results = filteredResults || allResults;
+  var totalPages = Math.ceil(results.length / PAGE_SIZE_DISPLAY);
+  if (totalPages < 1) totalPages = 1;
+  if (pageNum > totalPages) pageNum = totalPages;
+  if (pageNum < 1) pageNum = 1;
+  currentPageNum = pageNum;
+  var start = (pageNum - 1) * PAGE_SIZE_DISPLAY;
+  var pageData = results.slice(start, start + PAGE_SIZE_DISPLAY);
+  renderList(pageData, start);
+  renderPaginationFiltered(results);
+  if (showMarkers) { addMarkers(pageData); } else { clearMarkers(); }
+}
 
 function showCancel() {
   document.getElementById('btnCancel').style.display = '';
@@ -1033,7 +1281,7 @@ function cancelAll() {
   map.setStatus({ dragEnable: true });
   clearUserDraw();
   document.getElementById('drawHint').style.display = 'none';
-  document.getElementById('tip').textContent = '已取消。可自由移动地图';
+  document.getElementById('toast').textContent = '已取消。可自由移动地图';
   hideCancel();
   searchDone();
 }
@@ -1134,7 +1382,7 @@ function score(p) {
   // --- 行业匹配（加分，不扣分）---
   var indBonus = 0;
   for (var i = 0; i < MATCH.length; i++) {
-    if (t.indexOf(MATCH[i].toLowerCase()) >= 0) indBonus += 4;
+    if (t.indexOf(MATCH[i]) >= 0) indBonus += 4;
   }
   indBonus = Math.min(20, indBonus);
 
@@ -1186,38 +1434,50 @@ function addMarkers(results) {
   if (!showMarkers) { clearMarkers(); return; }
   clearMarkers();
   if (!results.length) return;
-  var valid = results.filter(function(r) { return r.lng && r.lat; });
-  if (!valid.length) return;
 
   var lngs = [], lats = [];
-  valid.forEach(function(r, i) {
+  results.forEach(function(r, i) {
+    if (!r.lng || !r.lat) return;
     lngs.push(r.lng); lats.push(r.lat);
-    var color = r.total >= 70 ? '#52c41a' : (r.total >= 50 ? '#faad14' : '#ff4d4f');
+    var key = r.name + '|' + (r.address || '');
+    var js = jobStatuses[key];
+    var color;
+    if (js && js.status === 'hiring') color = '#52c41a';
+    else if (js && js.status === 'uncertain') color = '#fa8c16';
+    else color = r.total >= 70 ? '#1677ff' : (r.total >= 50 ? '#8c8c8c' : '#bfbfbf');
+
     var m = new AMap.Marker({
       position: [r.lng, r.lat],
       label: {
-        content: '<span style="display:inline-block;min-width:20px;height:20px;line-height:20px;text-align:center;background:' +
-          color + ';color:#fff;border-radius:10px;font-size:10px;font-weight:bold;padding:0 4px">' + (i + 1) + '</span>',
-        offset: new AMap.Pixel(-10, -10)
+        content: '<span style="display:inline-block;min-width:22px;height:22px;line-height:22px;text-align:center;background:' +
+          color + ';color:#fff;border-radius:11px;font-size:10px;font-weight:bold;padding:0 5px">' + (i + 1) + '</span>',
+        offset: new AMap.Pixel(-11, -11)
       },
-      zIndex: 300 - i
+      zIndex: (js && js.status === 'hiring') ? 400 - i : 300 - i
     });
-    m.on('click', (function(rr, col) {
+    m.on('click', (function(rr, col, js2) {
       return function() {
+        var srcTags = '';
+        if (js2 && js2.sources) {
+          ['boss','51job','zhilian'].forEach(function(sn) {
+            var src = js2.sources[sn];
+            if (src && src.status === 'found') srcTags += ' [' + sn + '+' + (src.count || '') + ']';
+          });
+        }
         new AMap.InfoWindow({
           content: '<div style="font-size:12px;max-width:280px"><strong>' + esc(rr.name) +
             '</strong> <span style="background:' + col + ';color:#fff;padding:1px 6px;border-radius:3px;font-size:11px">' +
             rr.total + '分</span><br>' + esc(rr.address || '') + '<br>' +
             rr.nature + ' | ' + (rr.distance ? rr.distance.toFixed(1) + 'km' : '--') +
-            (rr.phone ? ' | ' + rr.phone : '') + '</div>',
+            srcTags + '</div>',
           offset: new AMap.Pixel(0, -30)
         }).open(map, m.getPosition());
       };
-    })(r, color));
+    })(r, color, js));
     m.setMap(map); markers.push(m);
   });
 
-  map.setFitView(null, false, [60, 60, 450, 60]);
+  if (lngs.length) map.setFitView(null, false, [60, 60, 450, 60]);
 }
 
 // ============================================================
@@ -1227,38 +1487,54 @@ function renderList(results, startIndex) {
   if (typeof startIndex === 'undefined') startIndex = 0;
   if (!results.length) {
     document.getElementById('resList').innerHTML =
-      '<div style="text-align:center;padding:30px;color:#999;line-height:2">当前范围内未找到公司<br>建议: 换区域 / 扩大视野 / 检查网络</div>';
-    document.getElementById('resTitle').textContent = '结果 0 家';
+      '<div style="text-align:center;padding:30px;color:var(--c-text3);line-height:2">当前范围未找到公司<br>建议: 换区域 / 扩大视野 / 检查网络</div>';
     return;
   }
+
   var h = '';
   for (var i = 0; i < results.length; i++) {
     var r = results[i];
-    var cls = r.total >= 70 ? 'h' : (r.total >= 50 ? 'm' : 'l');
+    var key = r.name + '|' + (r.address || '');
+    var js = jobStatuses[key];
+    var jStatus = js ? js.status : null;
+
+    var borderCls = '';
+    if (jStatus === 'hiring') borderCls = 'h';
+    else if (jStatus === 'uncertain') borderCls = 'u';
+    else if (js) borderCls = 'n';
+
+    var scoreCls = r.total >= 70 ? 'h' : (r.total >= 50 ? 'm' : 'l');
     var dstStr = r.distance !== null ? r.distance.toFixed(1) + 'km' : '--';
     var natCls = 'nat-' + r.nature;
-    var rid = 'row' + i;
-    h += '<div class="rrow ' + cls + '" id="' + rid + '" onclick="toggleDetail(\'' + rid + '\')">' +
+
+    // 招聘来源标签
+    var tags = '';
+    if (js && js.sources) {
+      var sourceNames = ['boss','51job','zhilian','website','qdrczp','bendibao'];
+      var sourceLabels = ['BOSS','51job','智联','官网','人才网','本地宝'];
+      for (var si = 0; si < sourceNames.length; si++) {
+        var src = js.sources[sourceNames[si]];
+        if (!src) continue;
+        var tagCls = src.status === 'found' ? 'found' : (src.status === 'error' ? 'error' : '');
+        if (!tagCls) continue;
+        var label = sourceLabels[si];
+        if (src.status === 'found' && src.count && src.count > 0) label += ' +' + src.count;
+        else if (src.status === 'found') label += ' ✓';
+        else label += ' ?';
+        tags += '<span class="rtag ' + tagCls + '">' + label + '</span>';
+      }
+    }
+
+    h += '<div class="rrow ' + borderCls + '" onclick="toggleDetail(\'row' + i + '\')">' +
       '<div class="rt"><span class="rn">' + (startIndex + i + 1) + '. ' + esc(r.name) +
       '<span class="rnatur ' + natCls + '">' + r.nature + '</span>' +
       ' <button class="btn-save' + (isSaved(r) ? ' on' : '') + '" onclick="event.stopPropagation();toggleSave(this,\'' +
       esc(r.name).replace(/'/g,"\\'") + '\',\'' + esc(r.address||'').replace(/'/g,"\\'") + '\')" title="收藏">' + (isSaved(r) ? '★' : '☆') + '</button></span>' +
-      '<span class="rs ' + cls + '">' + r.total + '</span></div>' +
-      '<div class="rm"><span>企业性质' + r.natureScore + '</span>' +
-      '<span>规模' + r.scaleScore + '</span>' +
-      '<span>福利' + r.welfareScore + '</span>' +
-      '<span>距离' + r.distanceScore + '</span></div>' +
-      '<div class="ra">' + esc(r.address) + ' | ' + dstStr +
-      (r.phone ? ' | ' + r.phone : '') + (r.amapRating ? ' | 高德'+r.amapRating+'星' : '') + '</div>' +
-      '<div class="links"><a class="boss" href="' + bossLink(r.name) +
-      '" target="_blank">BOSS直聘</a><a class="zl" href="' + zlLink(r.name) +
-      '" target="_blank">智联</a><a class="wuyi" href="' + wuyiLink(r.name) +
-      '" target="_blank">前程无忧</a>' +
-      ' <a style="color:#ff6600;font-size:10px" href="' + bdLink(r.name) + '" target="_blank">本地宝</a>' +
-      ' <a style="color:#1677ff;font-size:10px" href="' + rcLink(r.name) + '" target="_blank">人才网</a>' +
-      (r.website ? '<a class="web" href="' +
-      (r.website.indexOf('http')===0?r.website:'http://'+r.website) +
-      '" target="_blank">官网</a>' : '') + '</div>' +
+      '<span class="rs ' + scoreCls + '">' + r.total + '</span></div>' +
+      '<div class="rm"><span>' + r.nature + '</span><span>·</span><span>' + dstStr + '</span>' +
+      (r.amapRating ? '<span>· ⭐' + r.amapRating + '</span>' : '') + '</div>' +
+      '<div class="ra">' + esc(r.address || '') + '</div>' +
+      (tags ? '<div class="rtags">' + tags + '</div>' : '') +
       '<div class="rd" id="detail' + i + '"><table>' +
       '<tr><td>企业性质</td><td>' + r.natureScore + '</td></tr>' +
       '<tr><td>规模推断</td><td>' + r.scaleScore + '</td></tr>' +
@@ -1266,12 +1542,21 @@ function renderList(results, startIndex) {
       '<tr><td>距离分</td><td>' + r.distanceScore + ' (' + dstStr + ')</td></tr>' +
       '<tr><td>电话</td><td>' + (r.phone || '—') + '</td></tr>' +
       (r.website ? '<tr><td>官网</td><td>' + esc(r.website) + '</td></tr>' : '') +
-      '</table></div></div>';
+      '</table>' +
+      (js && js.sources ? renderSourceLinks(r.name, js.sources) : '') +
+      '</div></div>';
   }
   document.getElementById('resList').innerHTML = h;
-  var totalPages = Math.ceil(allResults.length / PAGE_SIZE_DISPLAY) || 1;
-  document.getElementById('resTitle').textContent = '结果 ' + allResults.length + ' 家' +
-    (totalPages > 1 ? ' (第' + currentPageNum + '/' + totalPages + '页)' : '');
+}
+
+function renderSourceLinks(name, sources) {
+  var links = '<div style="margin-top:6px;padding-top:6px;border-top:1px solid #f0f0f0;display:flex;gap:8px;flex-wrap:wrap">';
+  if (sources.boss) links += '<a href="https://www.zhipin.com/web/geek/job?query=' + encodeURIComponent(name) + '&city=101120200" target="_blank" style="font-size:10px;color:var(--c-primary)">BOSS直聘</a>';
+  if (sources['51job']) links += '<a href="https://we.51job.com/pc/search?keyword=' + encodeURIComponent(name) + '&area=370200" target="_blank" style="font-size:10px;color:var(--c-primary)">51job</a>';
+  if (sources.zhilian) links += '<a href="https://sou.zhaopin.com/?jl=698&kw=' + encodeURIComponent(name) + '" target="_blank" style="font-size:10px;color:var(--c-primary)">智联</a>';
+  if (sources.qdrczp) links += '<a href="https://fw.rc.qingdao.gov.cn/" target="_blank" style="font-size:10px;color:var(--c-primary)">青岛人才网</a>';
+  links += '</div>';
+  return links;
 }
 
 function toggleDetail(rid) {
@@ -1305,16 +1590,18 @@ function getCurrentPage() {
 }
 
 function renderPage(pageNum) {
-  var totalPages = Math.ceil(allResults.length / PAGE_SIZE_DISPLAY);
+  var results = filteredResults || allResults;
+  var totalPages = Math.ceil(results.length / PAGE_SIZE_DISPLAY);
   if (totalPages < 1) totalPages = 1;
   if (pageNum > totalPages) pageNum = totalPages;
   if (pageNum < 1) pageNum = 1;
   currentPageNum = pageNum;
 
-  var pageData = getCurrentPage();
-  renderList(pageData, (pageNum - 1) * PAGE_SIZE_DISPLAY);
-  renderPagination();
-  if (showMarkers) { addMarkers(getCurrentPage()); } else { clearMarkers(); }
+  var start = (pageNum - 1) * PAGE_SIZE_DISPLAY;
+  var pageData = results.slice(start, start + PAGE_SIZE_DISPLAY);
+  renderList(pageData, start);
+  renderPaginationFiltered(results);
+  if (showMarkers) { addMarkers(pageData); } else { clearMarkers(); }
 }
 
 function renderPagination() {
@@ -1353,13 +1640,17 @@ function renderPagination() {
 document.getElementById('btnCsv').onclick = function() {
   if (!allResults.length) return;
   function safeStr(v) { return String(v || '').replace(/"/g, '""'); }
-  var rows = ['﻿排名,总分,公司名,企业性质,地址,距离(km),企业性质分,规模分,福利分,距离分,联系方式分,电话,官网'];
+  var rows = ['﻿排名,总分,公司名,企业性质,招聘状态,地址,距离(km),企业性质分,规模分,福利分,距离分,联系方式分,电话,官网'];
   for (var i = 0; i < allResults.length; i++) {
     var r = allResults[i];
+    var key = r.name + '|' + (r.address || '');
+    var js = jobStatuses[key];
+    var jStatus = js ? (js.status === 'hiring' ? '在招' : (js.status === 'uncertain' ? '不明' : '未找到')) : '未查';
     rows.push([
       i + 1, r.total,
       '"' + safeStr(r.name) + '"',
       r.nature,
+      jStatus,
       '"' + safeStr(r.address) + '"',
       r.distance !== null ? r.distance.toFixed(1) : '',
       r.natureScore, r.scaleScore, r.welfareScore, r.distanceScore, r.contactScore,
@@ -1377,7 +1668,7 @@ document.getElementById('btnCsv').onclick = function() {
     ('0' + dt.getMinutes()).slice(-2) + '.csv';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(a.href);
-  document.getElementById('tip').textContent = '[OK] CSV已导出: ' + allResults.length + ' 家公司';
+  toast('CSV已导出: ' + allResults.length + ' 家公司');
 };
 
 function toggleSave(btn, name, addr) {

@@ -6,3 +6,4 @@ node_modules/
 tests/*.png
 scripts/jobs-cache.json
 scripts/.browser-profile/
+dist/

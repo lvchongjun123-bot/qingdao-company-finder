@@ -55,16 +55,23 @@ async function checkAllSources(page, name, result) {
       (async () => {
         await page.goto(`https://www.zhipin.com/web/geek/job?query=${encodeURIComponent(name)}&city=101120200`, { waitUntil: 'domcontentloaded', timeout: SOURCE_TIMEOUT });
         await new Promise(r => setTimeout(r, 2000));
-        const count = await page.evaluate(() => {
+        const info = await page.evaluate(() => {
+          if (document.title.includes('安全验证') || document.title.includes('验证')) {
+            return { blocked: true, count: 0 };
+          }
           const items = document.querySelectorAll('.job-card-wrap, .job-card-body, li[class*="job"]');
           let n = 0;
           items.forEach(el => {
             const text = el.textContent || '';
             if (!/20(0\d|1\d|2[0-5])[^\d]/.test(text)) n++;
           });
-          return n;
+          return { blocked: false, count: n };
         });
-        result.sources.boss = { status: count > 0 ? 'found' : 'not_found', count };
+        if (info.blocked) {
+          result.sources.boss = { status: 'blocked', reason: 'captcha verification required' };
+        } else {
+          result.sources.boss = { status: info.count > 0 ? 'found' : 'not_found', count: info.count };
+        }
       })(),
       new Promise((_, r) => setTimeout(() => r(new Error('timeout')), SOURCE_TIMEOUT))
     ]);
@@ -78,16 +85,34 @@ async function checkAllSources(page, name, result) {
       (async () => {
         await page.goto(`https://we.51job.com/pc/search?keyword=${encodeURIComponent(name)}&area=370200`, { waitUntil: 'domcontentloaded', timeout: SOURCE_TIMEOUT });
         await new Promise(r => setTimeout(r, 2000));
-        const count = await page.evaluate(() => {
+        const info = await page.evaluate((searchName) => {
+          // 检查无结果标志
+          const bodyText = document.body ? document.body.innerText : '';
+          if (/暂无相关职位|没有找到符合条件的|很抱歉，没有找到/.test(bodyText)) {
+            return { noResult: true, count: 0 };
+          }
           const items = document.querySelectorAll('.joblist-item, .j_joblist > div, .e');
           let n = 0;
           items.forEach(el => {
             const text = el.textContent || '';
-            if (!/20(0\d|1\d|2[0-5])[^\d]/.test(text)) n++;
+            if (/20(0\d|1\d|2[0-5])[^\d]/.test(text)) return;
+            // 验证公司名匹配：职位卡片里应包含搜索的公司名关键词
+            const coEl = el.querySelector('[class*="cname"], [class*="company"], a[class*="com"], [title*="公司"]');
+            if (coEl) {
+              const coName = coEl.textContent.trim();
+              // 取搜索词核心部分（去掉省市后缀）做模糊匹配
+              const core = searchName.replace(/[（(][^)）]*[)）]|[省市区县]$/g, '').substring(0, 6);
+              if (core.length >= 2 && !coName.includes(core)) return;
+            }
+            n++;
           });
-          return n;
-        });
-        result.sources['51job'] = { status: count > 0 ? 'found' : 'not_found', count };
+          return { noResult: false, count: n };
+        }, name);
+        if (info.noResult) {
+          result.sources['51job'] = { status: 'not_found', count: 0 };
+        } else {
+          result.sources['51job'] = { status: info.count > 0 ? 'found' : 'not_found', count: info.count };
+        }
       })(),
       new Promise((_, r) => setTimeout(() => r(new Error('timeout')), SOURCE_TIMEOUT))
     ]);
@@ -99,18 +124,34 @@ async function checkAllSources(page, name, result) {
   try {
     await Promise.race([
       (async () => {
-        await page.goto(`https://sou.zhaopin.com/?jl=698&kw=${encodeURIComponent(name)}`, { waitUntil: 'domcontentloaded', timeout: SOURCE_TIMEOUT });
+        await page.goto(`https://www.zhaopin.com/sou/?kw=${encodeURIComponent(name)}&city=370200`, { waitUntil: 'domcontentloaded', timeout: SOURCE_TIMEOUT });
         await new Promise(r => setTimeout(r, 2000));
-        const count = await page.evaluate(() => {
-          const items = document.querySelectorAll('.positionlist .contentpile__content, .joblist-box__item');
+        const info = await page.evaluate((searchName) => {
+          // 检查是否被安全验证拦截
+          if (document.title.includes('Security') || document.title.includes('安全验证') || document.title.includes('验证')) {
+            return { blocked: true, count: 0 };
+          }
+          const items = document.querySelectorAll('.joblist-box__item, [class*="joblist-box__item"]');
           let n = 0;
           items.forEach(el => {
             const text = el.textContent || '';
-            if (!/20(0\d|1\d|2[0-5])[^\d]/.test(text)) n++;
+            if (/20(0\d|1\d|2[0-5])[^\d]/.test(text)) return;
+            // 验证公司名匹配
+            const coEl = el.querySelector('[class*="company"], [class*="corp"], [class*="cname"], .company__title');
+            if (coEl) {
+              const coName = coEl.textContent.trim();
+              const core = searchName.replace(/[（(][^)）]*[)）]|[省市区县]$/g, '').substring(0, 6);
+              if (core.length >= 2 && !coName.includes(core)) return;
+            }
+            n++;
           });
-          return n;
-        });
-        result.sources.zhilian = { status: count > 0 ? 'found' : 'not_found', count };
+          return { blocked: false, count: n };
+        }, name);
+        if (info.blocked) {
+          result.sources.zhilian = { status: 'blocked', reason: 'security verification required' };
+        } else {
+          result.sources.zhilian = { status: info.count > 0 ? 'found' : 'not_found', count: info.count };
+        }
       })(),
       new Promise((_, r) => setTimeout(() => r(new Error('timeout')), SOURCE_TIMEOUT))
     ]);
@@ -222,7 +263,19 @@ const server = http.createServer(async (req, res) => {
       browser = await puppeteer.launch({
         headless: true,
         userDataDir: PROFILE_DIR,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-blink-features=AutomationControlled',
+          '--disable-features=IsolateOrigins,site-per-process',
+          '--disable-site-isolation-trials',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--no-first-run',
+          '--disable-features=TranslateUI',
+          '--disable-ipc-flooding-protection',
+          '--window-size=1920,1080'
+        ]
       });
     } catch(e) {
       res.writeHead(500, { ...corsHeaders(), 'Content-Type': 'application/json' });
@@ -242,6 +295,11 @@ const server = http.createServer(async (req, res) => {
         if (hit) { results[name] = hit; return; }
 
         const page = await browser.newPage();
+        // 反检测：隐藏自动化标志
+        await page.evaluateOnNewDocument(() => {
+          Object.defineProperty(navigator, 'webdriver', { get: () => false });
+          window.chrome = { runtime: {} };
+        });
         const result = { status: 'not_found', sources: {} };
 
         try {
@@ -260,10 +318,11 @@ const server = http.createServer(async (req, res) => {
           delete result._website;
         }
 
-        // 综合判定
+        // 综合判定（忽略 blocked 状态，它不算 error 也不算 found）
         const hasFound = Object.values(result.sources).some(s => s.status === 'found');
         const hasError = Object.values(result.sources).some(s => s.status === 'error');
-        result.status = hasFound ? 'hiring' : (hasError ? 'uncertain' : 'not_found');
+        const allBlocked = Object.values(result.sources).every(s => s.status === 'blocked' || s.status === 'not_found');
+        result.status = hasFound ? 'hiring' : (hasError && !allBlocked ? 'uncertain' : 'not_found');
 
         setCache(name, result);
         results[name] = result;

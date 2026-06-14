@@ -2,20 +2,21 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>青岛公司发现 · 高德地图</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>青岛公司发现 · 移动版</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%231677ff'/><path d='M32 12 C22 12 14 20 14 30 C14 42 32 56 32 56 C32 56 50 42 50 30 C50 20 42 12 32 12 Z M32 36 C28.7 36 26 33.3 26 30 C26 26.7 28.7 24 32 24 C35.3 24 38 26.7 38 30 C38 33.3 35.3 36 32 36 Z' fill='white'/></svg>" />
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'-apple-system','Microsoft YaHei',sans-serif;overflow:hidden;background:#f0f2f5}
-    #app{width:100vw;height:100vh}
+    html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'-apple-system','PingFang SC','Microsoft YaHei',sans-serif}
+    #app{width:100%;height:100%}
   </style>
   <script>
-    // 高德安全密钥（JS API 2.0 数据服务必需）
     window._AMapSecurityConfig = { securityJsCode: '8c098a05e42da428b9fc42f2dbc47070' };
     // 消除 AMap Canvas2D "Multiple readback operations" 警告
     (function(){
-      const _orig = HTMLCanvasElement.prototype.getContext;
+      var _orig = HTMLCanvasElement.prototype.getContext;
       HTMLCanvasElement.prototype.getContext = function(type, opts) {
         if (type === '2d') {
           return _orig.call(this, type, Object.assign({ willReadFrequently: true }, opts));
@@ -28,6 +29,6 @@
 <body>
   <div id="app"></div>
   <script src="https://webapi.amap.com/maps?v=2.0&key=a3a3169723ae7b4ad9cafae574444664&plugin=AMap.Geocoder,AMap.MouseTool,AMap.DistrictSearch"></script>
-  <script type="module" src="/src/main.js"></script>
+  <script type="module" src="/mobile/main.js"></script>
 </body>
 </html>
