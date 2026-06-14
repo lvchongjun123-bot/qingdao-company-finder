@@ -457,51 +457,6 @@ document.getElementById('btnSelNone').addEventListener('click', function() {
   document.querySelectorAll('#distDrop input[type=checkbox]').forEach(function(c) { c.checked = false; });
 });
 
-// 查招聘 — 批量打开黄岛区公司招聘链接
-document.getElementById('btnJobCheck').onclick = function() {
-  if (isSearching || !allResults.length) {
-    alert('请先搜索出结果');
-    return;
-  }
-  var hd = allResults.filter(function(r) {
-    return r.address && r.address.indexOf('黄岛') >= 0;
-  });
-  if (!hd.length) {
-    alert('没有黄岛区的公司');
-    return;
-  }
-  var msg = '将打开 ' + hd.length + ' 家黄岛区公司的招聘链接\n（每家 5 个标签页 = ' + (hd.length * 5) + ' 个标签页）\n\n浏览器可能卡顿，确定继续？';
-  if (hd.length > 15) {
-    msg += '\n\n建议：先缩小搜索范围或先收藏目标公司';
-  }
-  if (!confirm(msg)) return;
-
-  var delay = 0;
-  hd.forEach(function(r) {
-    setTimeout(function() {
-      window.open(bossLink(r.name), '_blank');
-    }, delay);
-    delay += 80;
-    setTimeout(function() {
-      window.open(zlLink(r.name), '_blank');
-    }, delay);
-    delay += 80;
-    setTimeout(function() {
-      window.open(wuyiLink(r.name), '_blank');
-    }, delay);
-    delay += 80;
-    setTimeout(function() {
-      window.open(bdLink(r.name), '_blank');
-    }, delay);
-    delay += 80;
-    setTimeout(function() {
-      window.open(rcLink(r.name), '_blank');
-    }, delay);
-    delay += 80;
-  });
-  document.getElementById('toast').textContent = '[OK] 正在打开 ' + hd.length + ' 家公司的招聘链接...';
-};
-
 // 我的名单面板
 document.getElementById('btnMyList').onclick = function() {
   renderSavedPanel();
@@ -1086,6 +1041,8 @@ document.getElementById('btnGo').onclick = function() {
       if (excluded) console.log('Excluded (个体户/工作室):', excluded);
       scored.sort(function(a, b) { return b.total - a.total; });
       allResults = scored;
+      filteredResults = null;
+      jobFilter = 'all';
       try {
         currentPageNum = 1;
         renderPage(1);
@@ -1103,6 +1060,189 @@ document.getElementById('btnGo').onclick = function() {
 };
 
 var searchCancelled = false;
+
+// 招聘状态
+var jobStatuses = {}; // { "公司名|地址": { status, sources } }
+var jobFilter = 'all'; // hiring | uncertain | all
+var filteredResults = null;
+var JOB_API = 'http://localhost:23334/check';
+
+async function checkJobStatuses() {
+  if (!allResults.length) { toast('请先搜索出结果'); return; }
+
+  var unchecked = allResults.filter(function(r) {
+    var key = r.name + '|' + (r.address || '');
+    return !jobStatuses[key];
+  });
+
+  if (!unchecked.length) {
+    toast('所有公司已查过招聘状态');
+    return;
+  }
+
+  toast('正在查询 ' + unchecked.length + ' 家公司的招聘状态...', 0);
+  var btn = document.getElementById('btnJobCheck');
+  btn.classList.add('busy');
+  btn.textContent = '查询中...';
+
+  var BATCH = 20;
+  for (var i = 0; i < unchecked.length; i += BATCH) {
+    var batch = unchecked.slice(i, i + BATCH);
+    var payload = batch.map(function(r) {
+      return { name: r.name, website: r.website || '' };
+    });
+
+    try {
+      var resp = await fetch(JOB_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      var data = await resp.json();
+
+      for (var j = 0; j < batch.length; j++) {
+        var r = batch[j];
+        var key = r.name + '|' + (r.address || '');
+        var result = data[r.name];
+        if (result) {
+          jobStatuses[key] = result;
+        } else {
+          jobStatuses[key] = { status: 'error', sources: {} };
+        }
+      }
+    } catch(e) {
+      console.log('Job check error:', e.message);
+      for (var k = 0; k < batch.length; k++) {
+        var r2 = batch[k];
+        var key2 = r2.name + '|' + (r2.address || '');
+        jobStatuses[key2] = { status: 'error', sources: {}, _error: e.message };
+      }
+    }
+
+    var done = Math.min(i + BATCH, unchecked.length);
+    document.getElementById('toast').textContent = '查询中... ' + done + '/' + unchecked.length;
+  }
+
+  btn.classList.remove('busy');
+  btn.textContent = '查招聘状态';
+
+  var hiring = 0, uncertain = 0, notFound = 0;
+  allResults.forEach(function(r) {
+    var key = r.name + '|' + (r.address || '');
+    var s = jobStatuses[key];
+    if (!s) return;
+    if (s.status === 'hiring') hiring++;
+    else if (s.status === 'uncertain') uncertain++;
+    else notFound++;
+  });
+
+  toast('查询完成: ' + hiring + ' 家在招, ' + uncertain + ' 家结果不明, ' + notFound + ' 家未找到');
+  updateFilterTabs();
+  applyJobFilter();
+}
+
+// 绑定按钮事件
+document.getElementById('btnJobCheck').onclick = function() {
+  if (isSearching) return;
+  checkJobStatuses();
+};
+
+function updateFilterTabs() {
+  var hiring = 0, uncertain = 0;
+  allResults.forEach(function(r) {
+    var key = r.name + '|' + (r.address || '');
+    var s = jobStatuses[key];
+    if (!s) return;
+    if (s.status === 'hiring') hiring++;
+    else if (s.status === 'uncertain') uncertain++;
+  });
+  var th = document.querySelector('.tab-hiring');
+  var tu = document.querySelector('.tab-uncertain');
+  var ta = document.querySelector('.tab-all');
+  if (th) th.textContent = hiring + ' 家在招';
+  if (tu) tu.textContent = uncertain + ' 家不明';
+  if (ta) ta.textContent = '全部 ' + allResults.length + ' 家';
+}
+
+document.getElementById('res').addEventListener('click', function(e) {
+  var span = e.target.closest('.tabs span');
+  if (!span) return;
+  var filter = span.dataset.filter;
+  if (!filter) return;
+  jobFilter = filter;
+  applyJobFilter();
+});
+
+function applyJobFilter() {
+  document.querySelectorAll('#res .tabs span').forEach(function(s) {
+    s.classList.toggle('on', s.dataset.filter === jobFilter);
+  });
+
+  if (jobFilter === 'hiring') {
+    filteredResults = allResults.filter(function(r) {
+      var s = jobStatuses[r.name + '|' + (r.address || '')];
+      return s && s.status === 'hiring';
+    });
+  } else if (jobFilter === 'uncertain') {
+    filteredResults = allResults.filter(function(r) {
+      var s = jobStatuses[r.name + '|' + (r.address || '')];
+      return s && s.status === 'uncertain';
+    });
+  } else {
+    filteredResults = allResults;
+  }
+
+  currentPageNum = 1;
+  var results = filteredResults;
+  var start = 0;
+  var pageData = results.slice(start, start + PAGE_SIZE_DISPLAY);
+  renderList(pageData, start);
+  renderPaginationFiltered(results);
+  if (showMarkers) { addMarkers(pageData); } else { clearMarkers(); }
+}
+
+function renderPaginationFiltered(results) {
+  var totalPages = Math.ceil(results.length / PAGE_SIZE_DISPLAY);
+  var el = document.getElementById('pagination');
+  if (totalPages <= 1) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.className = 'pager';
+
+  var html = '';
+  html += '<button ' + (currentPageNum <= 1 ? 'disabled' : 'onclick="goFilteredPage(' + (currentPageNum - 1) + ')"') + '>&lt;</button>';
+
+  var startP = Math.max(1, currentPageNum - 3);
+  var endP = Math.min(totalPages, currentPageNum + 3);
+  if (startP > 1) {
+    html += '<button onclick="goFilteredPage(1)">1</button>';
+    if (startP > 2) html += '<span class="pg-info">...</span>';
+  }
+  for (var p = startP; p <= endP; p++) {
+    html += '<button class="' + (p === currentPageNum ? 'on' : '') + '" onclick="goFilteredPage(' + p + ')">' + p + '</button>';
+  }
+  if (endP < totalPages) {
+    if (endP < totalPages - 1) html += '<span class="pg-info">...</span>';
+    html += '<button onclick="goFilteredPage(' + totalPages + ')">' + totalPages + '</button>';
+  }
+  html += '<button ' + (currentPageNum >= totalPages ? 'disabled' : 'onclick="goFilteredPage(' + (currentPageNum + 1) + ')"') + '>&gt;</button>';
+  html += '<span class="pg-info">共 ' + results.length + ' 条</span>';
+  el.innerHTML = html;
+}
+
+function goFilteredPage(pageNum) {
+  var results = filteredResults || allResults;
+  var totalPages = Math.ceil(results.length / PAGE_SIZE_DISPLAY);
+  if (totalPages < 1) totalPages = 1;
+  if (pageNum > totalPages) pageNum = totalPages;
+  if (pageNum < 1) pageNum = 1;
+  currentPageNum = pageNum;
+  var start = (pageNum - 1) * PAGE_SIZE_DISPLAY;
+  var pageData = results.slice(start, start + PAGE_SIZE_DISPLAY);
+  renderList(pageData, start);
+  renderPaginationFiltered(results);
+  if (showMarkers) { addMarkers(pageData); } else { clearMarkers(); }
+}
 
 function showCancel() {
   document.getElementById('btnCancel').style.display = '';
@@ -1272,38 +1412,50 @@ function addMarkers(results) {
   if (!showMarkers) { clearMarkers(); return; }
   clearMarkers();
   if (!results.length) return;
-  var valid = results.filter(function(r) { return r.lng && r.lat; });
-  if (!valid.length) return;
 
   var lngs = [], lats = [];
-  valid.forEach(function(r, i) {
+  results.forEach(function(r, i) {
+    if (!r.lng || !r.lat) return;
     lngs.push(r.lng); lats.push(r.lat);
-    var color = r.total >= 70 ? '#52c41a' : (r.total >= 50 ? '#faad14' : '#ff4d4f');
+    var key = r.name + '|' + (r.address || '');
+    var js = jobStatuses[key];
+    var color;
+    if (js && js.status === 'hiring') color = '#52c41a';
+    else if (js && js.status === 'uncertain') color = '#fa8c16';
+    else color = r.total >= 70 ? '#1677ff' : (r.total >= 50 ? '#8c8c8c' : '#bfbfbf');
+
     var m = new AMap.Marker({
       position: [r.lng, r.lat],
       label: {
-        content: '<span style="display:inline-block;min-width:20px;height:20px;line-height:20px;text-align:center;background:' +
-          color + ';color:#fff;border-radius:10px;font-size:10px;font-weight:bold;padding:0 4px">' + (i + 1) + '</span>',
-        offset: new AMap.Pixel(-10, -10)
+        content: '<span style="display:inline-block;min-width:22px;height:22px;line-height:22px;text-align:center;background:' +
+          color + ';color:#fff;border-radius:11px;font-size:10px;font-weight:bold;padding:0 5px">' + (i + 1) + '</span>',
+        offset: new AMap.Pixel(-11, -11)
       },
-      zIndex: 300 - i
+      zIndex: (js && js.status === 'hiring') ? 400 - i : 300 - i
     });
-    m.on('click', (function(rr, col) {
+    m.on('click', (function(rr, col, js2) {
       return function() {
+        var srcTags = '';
+        if (js2 && js2.sources) {
+          ['boss','51job','zhilian'].forEach(function(sn) {
+            var src = js2.sources[sn];
+            if (src && src.status === 'found') srcTags += ' [' + sn + '+' + (src.count || '') + ']';
+          });
+        }
         new AMap.InfoWindow({
           content: '<div style="font-size:12px;max-width:280px"><strong>' + esc(rr.name) +
             '</strong> <span style="background:' + col + ';color:#fff;padding:1px 6px;border-radius:3px;font-size:11px">' +
             rr.total + '分</span><br>' + esc(rr.address || '') + '<br>' +
             rr.nature + ' | ' + (rr.distance ? rr.distance.toFixed(1) + 'km' : '--') +
-            (rr.phone ? ' | ' + rr.phone : '') + '</div>',
+            srcTags + '</div>',
           offset: new AMap.Pixel(0, -30)
         }).open(map, m.getPosition());
       };
-    })(r, color));
+    })(r, color, js));
     m.setMap(map); markers.push(m);
   });
 
-  map.setFitView(null, false, [60, 60, 450, 60]);
+  if (lngs.length) map.setFitView(null, false, [60, 60, 450, 60]);
 }
 
 // ============================================================
@@ -1313,38 +1465,54 @@ function renderList(results, startIndex) {
   if (typeof startIndex === 'undefined') startIndex = 0;
   if (!results.length) {
     document.getElementById('resList').innerHTML =
-      '<div style="text-align:center;padding:30px;color:#999;line-height:2">当前范围内未找到公司<br>建议: 换区域 / 扩大视野 / 检查网络</div>';
-    document.getElementById('toast').textContent = '结果 0 家';
+      '<div style="text-align:center;padding:30px;color:var(--c-text3);line-height:2">当前范围未找到公司<br>建议: 换区域 / 扩大视野 / 检查网络</div>';
     return;
   }
+
   var h = '';
   for (var i = 0; i < results.length; i++) {
     var r = results[i];
-    var cls = r.total >= 70 ? 'h' : (r.total >= 50 ? 'm' : 'l');
+    var key = r.name + '|' + (r.address || '');
+    var js = jobStatuses[key];
+    var jStatus = js ? js.status : null;
+
+    var borderCls = '';
+    if (jStatus === 'hiring') borderCls = 'h';
+    else if (jStatus === 'uncertain') borderCls = 'u';
+    else if (js) borderCls = 'n';
+
+    var scoreCls = r.total >= 70 ? 'h' : (r.total >= 50 ? 'm' : 'l');
     var dstStr = r.distance !== null ? r.distance.toFixed(1) + 'km' : '--';
     var natCls = 'nat-' + r.nature;
-    var rid = 'row' + i;
-    h += '<div class="rrow ' + cls + '" id="' + rid + '" onclick="toggleDetail(\'' + rid + '\')">' +
+
+    // 招聘来源标签
+    var tags = '';
+    if (js && js.sources) {
+      var sourceNames = ['boss','51job','zhilian','website','qdrczp','bendibao'];
+      var sourceLabels = ['BOSS','51job','智联','官网','人才网','本地宝'];
+      for (var si = 0; si < sourceNames.length; si++) {
+        var src = js.sources[sourceNames[si]];
+        if (!src) continue;
+        var tagCls = src.status === 'found' ? 'found' : (src.status === 'error' ? 'error' : '');
+        if (!tagCls) continue;
+        var label = sourceLabels[si];
+        if (src.status === 'found' && src.count && src.count > 0) label += ' +' + src.count;
+        else if (src.status === 'found') label += ' ✓';
+        else label += ' ?';
+        tags += '<span class="rtag ' + tagCls + '">' + label + '</span>';
+      }
+    }
+
+    h += '<div class="rrow ' + borderCls + '" onclick="toggleDetail(\'row' + i + '\')">' +
       '<div class="rt"><span class="rn">' + (startIndex + i + 1) + '. ' + esc(r.name) +
       '<span class="rnatur ' + natCls + '">' + r.nature + '</span>' +
       ' <button class="btn-save' + (isSaved(r) ? ' on' : '') + '" onclick="event.stopPropagation();toggleSave(this,\'' +
       esc(r.name).replace(/'/g,"\\'") + '\',\'' + esc(r.address||'').replace(/'/g,"\\'") + '\')" title="收藏">' + (isSaved(r) ? '★' : '☆') + '</button></span>' +
-      '<span class="rs ' + cls + '">' + r.total + '</span></div>' +
-      '<div class="rm"><span>企业性质' + r.natureScore + '</span>' +
-      '<span>规模' + r.scaleScore + '</span>' +
-      '<span>福利' + r.welfareScore + '</span>' +
-      '<span>距离' + r.distanceScore + '</span></div>' +
-      '<div class="ra">' + esc(r.address) + ' | ' + dstStr +
-      (r.phone ? ' | ' + r.phone : '') + (r.amapRating ? ' | 高德'+r.amapRating+'星' : '') + '</div>' +
-      '<div class="links"><a class="boss" href="' + bossLink(r.name) +
-      '" target="_blank">BOSS直聘</a><a class="zl" href="' + zlLink(r.name) +
-      '" target="_blank">智联</a><a class="wuyi" href="' + wuyiLink(r.name) +
-      '" target="_blank">前程无忧</a>' +
-      ' <a style="color:#ff6600;font-size:10px" href="' + bdLink(r.name) + '" target="_blank">本地宝</a>' +
-      ' <a style="color:#1677ff;font-size:10px" href="' + rcLink(r.name) + '" target="_blank">人才网</a>' +
-      (r.website ? '<a class="web" href="' +
-      (r.website.indexOf('http')===0?r.website:'http://'+r.website) +
-      '" target="_blank">官网</a>' : '') + '</div>' +
+      '<span class="rs ' + scoreCls + '">' + r.total + '</span></div>' +
+      '<div class="rm"><span>' + r.nature + '</span><span>·</span><span>' + dstStr + '</span>' +
+      (r.amapRating ? '<span>· ⭐' + r.amapRating + '</span>' : '') + '</div>' +
+      '<div class="ra">' + esc(r.address || '') + '</div>' +
+      (tags ? '<div class="rtags">' + tags + '</div>' : '') +
       '<div class="rd" id="detail' + i + '"><table>' +
       '<tr><td>企业性质</td><td>' + r.natureScore + '</td></tr>' +
       '<tr><td>规模推断</td><td>' + r.scaleScore + '</td></tr>' +
@@ -1352,12 +1520,21 @@ function renderList(results, startIndex) {
       '<tr><td>距离分</td><td>' + r.distanceScore + ' (' + dstStr + ')</td></tr>' +
       '<tr><td>电话</td><td>' + (r.phone || '—') + '</td></tr>' +
       (r.website ? '<tr><td>官网</td><td>' + esc(r.website) + '</td></tr>' : '') +
-      '</table></div></div>';
+      '</table>' +
+      (js && js.sources ? renderSourceLinks(r.name, js.sources) : '') +
+      '</div></div>';
   }
   document.getElementById('resList').innerHTML = h;
-  var totalPages = Math.ceil(allResults.length / PAGE_SIZE_DISPLAY) || 1;
-  document.getElementById('toast').textContent = '结果 ' + allResults.length + ' 家' +
-    (totalPages > 1 ? ' (第' + currentPageNum + '/' + totalPages + '页)' : '');
+}
+
+function renderSourceLinks(name, sources) {
+  var links = '<div style="margin-top:6px;padding-top:6px;border-top:1px solid #f0f0f0;display:flex;gap:8px;flex-wrap:wrap">';
+  if (sources.boss) links += '<a href="https://www.zhipin.com/web/geek/job?query=' + encodeURIComponent(name) + '&city=101120200" target="_blank" style="font-size:10px;color:var(--c-primary)">BOSS直聘</a>';
+  if (sources['51job']) links += '<a href="https://we.51job.com/pc/search?keyword=' + encodeURIComponent(name) + '&area=370200" target="_blank" style="font-size:10px;color:var(--c-primary)">51job</a>';
+  if (sources.zhilian) links += '<a href="https://sou.zhaopin.com/?jl=698&kw=' + encodeURIComponent(name) + '" target="_blank" style="font-size:10px;color:var(--c-primary)">智联</a>';
+  if (sources.qdrczp) links += '<a href="https://fw.rc.qingdao.gov.cn/" target="_blank" style="font-size:10px;color:var(--c-primary)">青岛人才网</a>';
+  links += '</div>';
+  return links;
 }
 
 function toggleDetail(rid) {
@@ -1391,16 +1568,18 @@ function getCurrentPage() {
 }
 
 function renderPage(pageNum) {
-  var totalPages = Math.ceil(allResults.length / PAGE_SIZE_DISPLAY);
+  var results = filteredResults || allResults;
+  var totalPages = Math.ceil(results.length / PAGE_SIZE_DISPLAY);
   if (totalPages < 1) totalPages = 1;
   if (pageNum > totalPages) pageNum = totalPages;
   if (pageNum < 1) pageNum = 1;
   currentPageNum = pageNum;
 
-  var pageData = getCurrentPage();
-  renderList(pageData, (pageNum - 1) * PAGE_SIZE_DISPLAY);
-  renderPagination();
-  if (showMarkers) { addMarkers(getCurrentPage()); } else { clearMarkers(); }
+  var start = (pageNum - 1) * PAGE_SIZE_DISPLAY;
+  var pageData = results.slice(start, start + PAGE_SIZE_DISPLAY);
+  renderList(pageData, start);
+  renderPaginationFiltered(results);
+  if (showMarkers) { addMarkers(pageData); } else { clearMarkers(); }
 }
 
 function renderPagination() {
@@ -1439,13 +1618,17 @@ function renderPagination() {
 document.getElementById('btnCsv').onclick = function() {
   if (!allResults.length) return;
   function safeStr(v) { return String(v || '').replace(/"/g, '""'); }
-  var rows = ['﻿排名,总分,公司名,企业性质,地址,距离(km),企业性质分,规模分,福利分,距离分,联系方式分,电话,官网'];
+  var rows = ['﻿排名,总分,公司名,企业性质,招聘状态,地址,距离(km),企业性质分,规模分,福利分,距离分,联系方式分,电话,官网'];
   for (var i = 0; i < allResults.length; i++) {
     var r = allResults[i];
+    var key = r.name + '|' + (r.address || '');
+    var js = jobStatuses[key];
+    var jStatus = js ? (js.status === 'hiring' ? '在招' : (js.status === 'uncertain' ? '不明' : '未找到')) : '未查';
     rows.push([
       i + 1, r.total,
       '"' + safeStr(r.name) + '"',
       r.nature,
+      jStatus,
       '"' + safeStr(r.address) + '"',
       r.distance !== null ? r.distance.toFixed(1) : '',
       r.natureScore, r.scaleScore, r.welfareScore, r.distanceScore, r.contactScore,
@@ -1463,7 +1646,7 @@ document.getElementById('btnCsv').onclick = function() {
     ('0' + dt.getMinutes()).slice(-2) + '.csv';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(a.href);
-  document.getElementById('toast').textContent = '[OK] CSV已导出: ' + allResults.length + ' 家公司';
+  toast('CSV已导出: ' + allResults.length + ' 家公司');
 };
 
 function toggleSave(btn, name, addr) {
