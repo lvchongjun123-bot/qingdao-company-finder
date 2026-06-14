@@ -8,6 +8,7 @@
     "test": "tests"
   },
   "scripts": {
+    "check-jobs": "node scripts/check-jobs.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

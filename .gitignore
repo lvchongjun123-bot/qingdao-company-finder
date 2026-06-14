@@ -4,3 +4,5 @@ Thumbs.db
 __pycache__/
 node_modules/
 tests/*.png
+scripts/jobs-cache.json
+scripts/.browser-profile/
