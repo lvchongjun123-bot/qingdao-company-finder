@@ -16,7 +16,9 @@ const COMPANY_TIMEOUT = 30000;
 // 加载缓存
 let cache = {};
 if (fs.existsSync(CACHE_FILE)) {
-  try { cache = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf-8')); } catch(e) {}
+  try { cache = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf-8')); } catch(e) {
+    if (e.code !== 'ENOENT') console.error('[check-jobs] Cache read error:', e.message);
+  }
 }
 
 function saveCache() {
@@ -64,7 +66,7 @@ async function checkAllSources(page, name, result) {
         });
         result.sources.boss = { status: count > 0 ? 'found' : 'not_found', count };
       })(),
-      new Promise(r => setTimeout(() => r('timeout'), SOURCE_TIMEOUT))
+      new Promise((_, r) => setTimeout(() => r(new Error('timeout')), SOURCE_TIMEOUT))
     ]);
   } catch(e) {
     result.sources.boss = { status: 'error', reason: (e.message || 'timeout').slice(0, 80) };
@@ -87,7 +89,7 @@ async function checkAllSources(page, name, result) {
         });
         result.sources['51job'] = { status: count > 0 ? 'found' : 'not_found', count };
       })(),
-      new Promise(r => setTimeout(() => r('timeout'), SOURCE_TIMEOUT))
+      new Promise((_, r) => setTimeout(() => r(new Error('timeout')), SOURCE_TIMEOUT))
     ]);
   } catch(e) {
     result.sources['51job'] = { status: 'error', reason: (e.message || 'timeout').slice(0, 80) };
@@ -110,7 +112,7 @@ async function checkAllSources(page, name, result) {
         });
         result.sources.zhilian = { status: count > 0 ? 'found' : 'not_found', count };
       })(),
-      new Promise(r => setTimeout(() => r('timeout'), SOURCE_TIMEOUT))
+      new Promise((_, r) => setTimeout(() => r(new Error('timeout')), SOURCE_TIMEOUT))
     ]);
   } catch(e) {
     result.sources.zhilian = { status: 'error', reason: (e.message || 'timeout').slice(0, 80) };
@@ -133,7 +135,7 @@ async function checkAllSources(page, name, result) {
           });
           result.sources.website = { status: hasCareer ? 'found' : 'not_found' };
         })(),
-        new Promise(r => setTimeout(() => r('timeout'), SOURCE_TIMEOUT))
+        new Promise((_, r) => setTimeout(() => r(new Error('timeout')), SOURCE_TIMEOUT))
       ]);
     } catch(e) {
       result.sources.website = { status: 'error', reason: (e.message || 'timeout').slice(0, 80) };
@@ -164,7 +166,7 @@ async function checkAllSources(page, name, result) {
         });
         result.sources.qdrczp = { status: count > 0 ? 'found' : 'not_found', count };
       })(),
-      new Promise(r => setTimeout(() => r('timeout'), SOURCE_TIMEOUT))
+      new Promise((_, r) => setTimeout(() => r(new Error('timeout')), SOURCE_TIMEOUT))
     ]);
   } catch(e) {
     result.sources.qdrczp = { status: 'error', reason: (e.message || 'timeout').slice(0, 80) };
@@ -187,7 +189,7 @@ async function checkAllSources(page, name, result) {
         });
         result.sources.bendibao = { status: count > 0 ? 'found' : 'not_found', count };
       })(),
-      new Promise(r => setTimeout(() => r('timeout'), SOURCE_TIMEOUT))
+      new Promise((_, r) => setTimeout(() => r(new Error('timeout')), SOURCE_TIMEOUT))
     ]);
   } catch(e) {
     result.sources.bendibao = { status: 'error', reason: (e.message || 'timeout').slice(0, 80) };
@@ -204,8 +206,9 @@ const server = http.createServer(async (req, res) => {
     res.end('Not found'); return;
   }
 
+  const MAX_BODY = 1024 * 1024; // 1MB limit
   let body = '';
-  req.on('data', c => body += c);
+  req.on('data', c => { body += c; if (body.length > MAX_BODY) req.destroy(); });
   req.on('end', async () => {
     let names = [];
     try { names = JSON.parse(body); } catch(e) {
@@ -217,7 +220,7 @@ const server = http.createServer(async (req, res) => {
     let browser;
     try {
       browser = await puppeteer.launch({
-        headless: 'new',
+        headless: true,
         userDataDir: PROFILE_DIR,
         args: ['--no-sandbox', '--disable-setuid-sandbox']
       });
@@ -246,13 +249,16 @@ const server = http.createServer(async (req, res) => {
           result._website = website;
           await Promise.race([
             checkAllSources(page, name, result),
-            new Promise(r => setTimeout(() => r('timeout'), COMPANY_TIMEOUT))
+            new Promise((_, r) => setTimeout(() => r(new Error('timeout')), COMPANY_TIMEOUT))
           ]);
         } catch(e) {
-          // 超时不处理，result 保留已查到的部分
+          console.error('[check-jobs] Error processing', name, ':', e.message || 'timeout');
+          result._error = e.message || 'timeout';
+        } finally {
+          // 清理页面状态，防止残留导航影响下一家公司
+          await page.goto('about:blank', { timeout: 2000 }).catch(() => {});
+          delete result._website;
         }
-
-        delete result._website;
 
         // 综合判定
         const hasFound = Object.values(result.sources).some(s => s.status === 'found');
