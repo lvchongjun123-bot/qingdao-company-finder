@@ -177,28 +177,30 @@ const pageButtons = computed(() => {
   border-radius: 10px;
   padding: 10px 12px;
   transition: .2s;
+  overflow: hidden;
+  min-width: 0;
 }
 .mr-card:active { background: #fafafa; }
 
 .mrc-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
-.mrc-left { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; flex-wrap: wrap; }
-.mrc-idx { font-size: 12px; color: #999; }
-.mrc-name { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; }
-.mrc-nat { padding: 2px 6px; border-radius: 4px; font-size: 10px; flex-shrink: 0; }
+.mrc-left { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; flex-wrap: wrap; overflow: hidden; }
+.mrc-idx { font-size: 12px; color: #999; flex-shrink: 0; }
+.mrc-name { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; }
+.mrc-nat { padding: 2px 6px; border-radius: 4px; font-size: 10px; flex-shrink: 0; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nat-外资 { background: #fff0f6; color: #c41d7f; }
 .nat-合资 { background: #fff7e6; color: #d46b08; }
 .nat-股份 { background: #f6ffed; color: #389e0d; }
 .nat-民营 { background: #e6f7ff; color: #096dd9; }
 .nat-个体 { background: #f5f5f5; color: #666; }
 
-.mrc-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.mrc-right { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 .mrc-save {
-  background: none; border: none; font-size: 20px; cursor: pointer;
-  padding: 4px; min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center;
+  background: none; border: none; font-size: 18px; cursor: pointer;
+  padding: 2px; min-width: 36px; min-height: 36px; display: flex; align-items: center; justify-content: center;
   color: #ccc; transition: .2s;
 }
 .mrc-save.on { color: #faad14; }
-.mrc-score { font-size: 14px; font-weight: 700; padding: 2px 8px; border-radius: 10px; min-width: 40px; text-align: center; }
+.mrc-score { font-size: 13px; font-weight: 700; padding: 2px 6px; border-radius: 8px; min-width: 34px; text-align: center; }
 .mrc-score.h { background: #f6ffed; color: #52c41a; }
 .mrc-score.m { background: #fff7e6; color: #fa8c16; }
 .mrc-score.l { background: #fff1f0; color: #ff4d4f; }
