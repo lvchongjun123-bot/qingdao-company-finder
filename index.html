@@ -688,6 +688,31 @@ function haversine(lng1, lat1, lng2, lat2) {
 }
 
 // 获取搜索目标
+// 根据 bounds 生成自适应网格搜索计划
+function generateGridPlans(bounds, label) {
+  var sw = bounds.getSouthWest(), ne = bounds.getNorthEast();
+  var RADIUS = 15000; // 15km
+  var spacing = 2 * RADIUS * 0.7 / 111000; // 度数间距（重叠30%）
+  var lngSpan = ne.lng - sw.lng;
+  var latSpan = ne.lat - sw.lat;
+  var cols = Math.max(1, Math.min(8, Math.ceil(lngSpan / spacing)));
+  var rows = Math.max(1, Math.min(8, Math.ceil(latSpan / spacing)));
+  var plans = [];
+  var cellLng = cols > 1 ? lngSpan / cols : 0;
+  var cellLat = rows > 1 ? latSpan / rows : 0;
+  for (var ci = 0; ci < cols; ci++) {
+    for (var ri = 0; ri < rows; ri++) {
+      plans.push({
+        label: label + (cols * rows > 1 ? '#' + (ci * rows + ri + 1) : ''),
+        lng: sw.lng + cellLng * (ci + 0.5),
+        lat: sw.lat + cellLat * (ri + 0.5),
+        radius: RADIUS
+      });
+    }
+  }
+  return plans;
+}
+
 function getSearchTargets(callback) {
   if (mode === 'dist') {
     // 行政区模式
@@ -852,7 +877,7 @@ document.getElementById('btnGo').onclick = function() {
   allResults = []; clearMarkers();
   document.getElementById('res').style.display = 'flex';
   document.getElementById('resList').innerHTML = '';
-  document.getElementById('resTitle').textContent = '准备搜索...';
+  document.getElementById('toast').textContent = '准备搜索...';
   document.getElementById('progWrap').style.display = 'block';
   document.getElementById('progFill').style.width = '0%';
   document.getElementById('progText').textContent = '正在规划搜索区域...';
@@ -929,17 +954,17 @@ document.getElementById('btnGo').onclick = function() {
 
   if (mode === 'rect') {
     if (!drawBounds) { searchDone(); return; }
-    var sw = drawBounds.getSouthWest(), ne = drawBounds.getNorthEast();
-    plans.push({label: '矩形', lng: (sw.lng+ne.lng)/2, lat: (sw.lat+ne.lat)/2,
-      radius: Math.max(Math.abs(ne.lng-sw.lng), Math.abs(ne.lat-sw.lat))*111000/2});
+    plans = generateGridPlans(drawBounds, '矩形');
   } else if (mode === 'circle') {
     if (!drawCenter || !drawRadius) { searchDone(); return; }
-    plans.push({label: '圆形', lng: drawCenter[0], lat: drawCenter[1], radius: drawRadius});
+    var deg2 = drawRadius / 111000;
+    var b2 = new AMap.Bounds(
+      [drawCenter[0] - deg2, drawCenter[1] - deg2],
+      [drawCenter[0] + deg2, drawCenter[1] + deg2]
+    );
+    plans = generateGridPlans(b2, '圆形(' + (drawRadius / 1000).toFixed(1) + 'km)');
   } else if (mode === 'view') {
-    var c = map.getCenter(), vb = map.getBounds();
-    var sw2 = vb.getSouthWest(), ne2 = vb.getNorthEast();
-    plans.push({label: '视野', lng: c.lng, lat: c.lat,
-      radius: Math.max(Math.abs(ne2.lng-sw2.lng), Math.abs(ne2.lat-sw2.lat))*111000/2});
+    plans = generateGridPlans(map.getBounds(), '视野');
   }
   // 限幅
   plans.forEach(function(p, i) {
@@ -1289,7 +1314,7 @@ function renderList(results, startIndex) {
   if (!results.length) {
     document.getElementById('resList').innerHTML =
       '<div style="text-align:center;padding:30px;color:#999;line-height:2">当前范围内未找到公司<br>建议: 换区域 / 扩大视野 / 检查网络</div>';
-    document.getElementById('resTitle').textContent = '结果 0 家';
+    document.getElementById('toast').textContent = '结果 0 家';
     return;
   }
   var h = '';
@@ -1331,7 +1356,7 @@ function renderList(results, startIndex) {
   }
   document.getElementById('resList').innerHTML = h;
   var totalPages = Math.ceil(allResults.length / PAGE_SIZE_DISPLAY) || 1;
-  document.getElementById('resTitle').textContent = '结果 ' + allResults.length + ' 家' +
+  document.getElementById('toast').textContent = '结果 ' + allResults.length + ' 家' +
     (totalPages > 1 ? ' (第' + currentPageNum + '/' + totalPages + '页)' : '');
 }
 
